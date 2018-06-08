@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.PopupMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,7 +39,12 @@ public class ExampleDialogFragment extends DialogFragment{
             @Override
             public void onClick(View v) {
                 if(listView.getCount()<4){
-
+                    AlertDialog dlg =  new AlertDialog.Builder(getActivity())
+                            .setTitle("メンバー選択")
+                            .setMessage("4人以上必要です")
+                            .setPositiveButton("OK",null)
+                            .show();
+                    dlg.show();
                 }else {
                     // クリック時の処理
                     dialog.dismiss();
