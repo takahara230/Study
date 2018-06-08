@@ -7,6 +7,7 @@
     <string name="member_name">名前</string>
     <string name="menu_cancel">キャンセル</string>
     <string name="menu_delete">削除</string>
+    <string name="guide_editText_name">プレイヤー名を入力します</string>
     <string-array name="list">
         <item>4人</item>
         <item>5人</item>

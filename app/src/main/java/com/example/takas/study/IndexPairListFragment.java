@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -38,7 +39,7 @@ public class IndexPairListFragment extends Fragment {
             return inflater.inflate(R.layout.fragment_number_of_men, container, false);
     }
 
-    public void onViewCreated(View view,Bundle savedInstanceState){
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState){
         super.onViewCreated(view,savedInstanceState);
         listView = view.findViewById(R.id.listView1);
 
@@ -172,7 +173,7 @@ public class IndexPairListFragment extends Fragment {
 
     Integer kumiawase_count(List<Integer> member, Integer l0,Integer l1)
     {
-        Integer m = m_kumiawase.get(String.format("%d-%d",member.get(l0),member.get(l1)));
+        Integer m = m_kumiawase.get(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)));
         if(m==null){
             m=0;
         }
@@ -181,7 +182,7 @@ public class IndexPairListFragment extends Fragment {
 
     void kumiawase_inc(List<Integer> member, Integer l0,Integer l1,Integer v)
     {
-        m_kumiawase.put(String.format("%d-%d",member.get(l0),member.get(l1)),v);
+        m_kumiawase.put(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)),v);
     }
 
 }

@@ -12,6 +12,7 @@
         android:text="@string/member_name" />
 
     <EditText
+        android:hint="@string/guide_editText_name"
         android:id="@+id/editText_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
