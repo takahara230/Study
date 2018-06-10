@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         }
         else{
 //            contentFragment.setText(s);
-            contentFragment.changeData(data);
+            contentFragment.makeFirstPar(data);
         }
     }
 }

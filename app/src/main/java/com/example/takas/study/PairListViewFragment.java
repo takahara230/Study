@@ -57,9 +57,7 @@ public class PairListViewFragment extends Fragment {
                 m_count = num+4;
                 Toast.makeText(view.getContext(), String.valueOf(num), Toast.LENGTH_SHORT).show();
 
-                adapter.clear();
-
-                addItem();
+                makeFirstPar(null);
             }
             @Override
             public void onNothingSelected(AdapterView<?> arg0) {
@@ -70,7 +68,8 @@ public class PairListViewFragment extends Fragment {
 
         setAdapters();
 
-        addItem();
+        // 起動直後
+        makeFirstPar(null);
     }
 
     /**
@@ -87,8 +86,7 @@ public class PairListViewFragment extends Fragment {
                 Spinner spinner = (Spinner) parent;
                 int num = spinner.getSelectedItemPosition();
                 m_coat = num+1;
-                adapter.clear();
-                addItem();
+                makeFirstPar(m_players);
             }
             @Override
             public void onNothingSelected(AdapterView<?> arg0) {
@@ -122,10 +120,16 @@ public class PairListViewFragment extends Fragment {
     protected List<Integer> m_Already;
 
     @SuppressLint("DefaultLocale")
-    public void addItem(){
-        // adapter.add("Hello!");
+    public void makeFirstPar(List<String> players){
+        adapter.clear();
         m_his = new HashMap<>();
         m_kumiawase = new HashMap<>();
+
+        if(players!=null) {
+            m_players = players;
+            m_count = players.size();
+        }
+
         for(Integer i=0;i<m_count;i++){
             m_his.put(i.toString(),new HashMap<String,Object>());
         }
@@ -139,10 +143,21 @@ public class PairListViewFragment extends Fragment {
                 num = getMemberId(num, k);
                 num = getMemberId(num, k);
                 kumiawase(k);
+                String l;
+                if(players!=null) {
+                    String p1 = m_players.get(k.get(0));
+                    String p2 = m_players.get(k.get(1));
+                    String p3 = m_players.get(k.get(2));
+                    String p4 = m_players.get(k.get(3));
+                    l = String.format("%s-%s vs %s-%s",p1,p2,p3,p4);
+                }else{
+                    l = String.format("%d-%d vs %d-%d", k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1);
+                }
+
                 if(m_coat>1)
-                    adapter.add(String.format("[%d-%d] %d-%d vs %d-%d", i + 1, c + 1 , k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1));
+                    adapter.add(String.format("[%d-%d] %s", i + 1, c + 1 , l));
                 else
-                    adapter.add(String.format("[%d] %d-%d vs %d-%d", i + 1, k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1));
+                    adapter.add(String.format("[%d] %s", i + 1,l));
             }
         }
     }
@@ -218,31 +233,4 @@ public class PairListViewFragment extends Fragment {
     }
 
     List<String> m_players;
-    public void changeData(List<String> data) {
-        adapter.clear();
-        m_players = data;
-        // adapter.add("Hello!");
-        m_count = data.size();
-        m_his = new HashMap<>();
-        m_kumiawase = new HashMap<>();
-        for(Integer i=0;i<m_count;i++){
-            m_his.put(i.toString(),new HashMap<String,Object>());
-        }
-        int num = 0;
-        for(int i=0;i<20;i++){
-            List<Integer> k = new ArrayList<>();
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            kumiawase(k);
-            String p1=m_players.get(k.get(0));
-            String p2 = m_players.get(k.get(1));
-            String p3 = m_players.get(k.get(2));
-            String p4 = m_players.get(k.get(3));
-            adapter.add(String.format("[%d] %s-%s vs %s-%s",i+1,p1,p2,p3,p4));
-
-
-        }
-    }
 }
