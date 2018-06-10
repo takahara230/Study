@@ -73,6 +73,10 @@ public class PairListViewFragment extends Fragment {
         addItem();
     }
 
+    /**
+     * コート数変更時の処理記述
+     * @param view
+     */
     void SetEventChangeCoatNum(@NonNull View view)
     {
         Spinner spinner = view.findViewById(R.id.select_court_spinner);
@@ -115,7 +119,7 @@ public class PairListViewFragment extends Fragment {
     protected int m_count = 4;
     protected Map<String,Map<String,Object>> m_his;
     protected Map<String,Integer> m_kumiawase;
-
+    protected List<Integer> m_Already;
 
     @SuppressLint("DefaultLocale")
     public void addItem(){
@@ -126,16 +130,20 @@ public class PairListViewFragment extends Fragment {
             m_his.put(i.toString(),new HashMap<String,Object>());
         }
         int num = 0;
-        for(int i=0;i<20;i++){
-            List<Integer> k = new ArrayList<>();
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            num = getMemberId(num,k);
-            kumiawase(k);
-            adapter.add(String.format("[%d] %d-%d vs %d-%d",i+1,k.get(0)+1,k.get(1)+1,k.get(2)+1,k.get(3)+1));
-
-
+        for(int i=0;i<m_count*2;i++){
+            m_Already = new ArrayList<>();
+            for( int c = 0 ; c < m_coat ; c++ ) {
+                List<Integer> k = new ArrayList<>();
+                num = getMemberId(num, k);
+                num = getMemberId(num, k);
+                num = getMemberId(num, k);
+                num = getMemberId(num, k);
+                kumiawase(k);
+                if(m_coat>1)
+                    adapter.add(String.format("[%d-%d] %d-%d vs %d-%d", i + 1, c + 1 , k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1));
+                else
+                    adapter.add(String.format("[%d] %d-%d vs %d-%d", i + 1, k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1));
+            }
         }
     }
     Integer getMemberId(int last_num,List<Integer> k){
