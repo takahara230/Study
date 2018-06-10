@@ -1,12 +1,15 @@
 package com.example.takas.study;
 
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity implements OnParingListChangeListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,14 +17,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         if(savedInstanceState == null) {
-
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-
-//            transaction.add(R.id.container, MainFragment.createInstance("hoge", Color.RED));
-//            transaction.add(R.id.container, MainFragment.createInstance("fuga", Color.BLUE));
-            transaction.replace(R.id.container, IndexPairListFragment.newInstance());
-
-
+            transaction.replace(R.id.container, PairListViewFragment.newInstance(), PairListViewFragment.TAG);
             transaction.commit();
         }
     }
@@ -42,18 +39,32 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.select_member) {
 
 
             // DialogFragment を表示します
-            ExampleDialogFragment exampleDialogFragment = new ExampleDialogFragment();
+            SelectPlayerDialogFragment exampleDialogFragment = new SelectPlayerDialogFragment();
             exampleDialogFragment.show(getSupportFragmentManager(),
-                    ExampleDialogFragment.class.getSimpleName());
+                    SelectPlayerDialogFragment.class.getSimpleName());
 
             return true;
         }
 
         return super.onOptionsItemSelected(item);
 
+    }
+
+    @Override
+    public void onParingListChanged(List<String> data) {
+        FragmentManager fragmentManager;
+        fragmentManager = getSupportFragmentManager();
+        PairListViewFragment contentFragment = (PairListViewFragment) fragmentManager.findFragmentByTag(PairListViewFragment.TAG);
+        if(contentFragment == null
+                || !contentFragment.isVisible()){
+        }
+        else{
+//            contentFragment.setText(s);
+            contentFragment.changeData(data);
+        }
     }
 }

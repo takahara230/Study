@@ -21,7 +21,11 @@ import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExampleDialogFragment extends DialogFragment{
+public class SelectPlayerDialogFragment extends DialogFragment{
+    public interface SelectPlayerDialogListener {
+        void onDialogPositiveClick(List<String> data);
+    }
+
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -40,12 +44,18 @@ public class ExampleDialogFragment extends DialogFragment{
             public void onClick(View v) {
                 if(listView.getCount()<4){
                     new AlertDialog.Builder(getActivity())
-                            .setTitle("メンバー選択")
-                            .setMessage("4人以上必要です")
+                            .setTitle(R.string.select_member)
+                            .setMessage("4人以上選択してください")
                             .setPositiveButton("OK",null)
                             .show();
                 }else {
                     // クリック時の処理
+                    Activity a = getActivity();
+                    if(a instanceof OnParingListChangeListener){
+                        OnParingListChangeListener listener =
+                                (OnParingListChangeListener) getActivity();
+                        listener.onParingListChanged(dataList);
+                    }
                     dialog.dismiss();
                 }
             }
@@ -110,8 +120,16 @@ public class ExampleDialogFragment extends DialogFragment{
     protected ArrayAdapter<String> adapter;
     public void setAdapters(){
         dataList = new ArrayList<>();
-        dataList.add("高原");
         dataList.add("長瀬");
+        dataList.add("寺本");
+        dataList.add("楮山");
+        dataList.add("竹内");
+        dataList.add("中西");
+        dataList.add("高原");
+        dataList.add("大久保");
+        dataList.add("松田谷");
+        dataList.add("安居");
+        dataList.add("赤木");
         final FragmentActivity activity = getActivity();
         if(activity!=null) {
             adapter = new ArrayAdapter<>(

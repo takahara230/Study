@@ -24,13 +24,15 @@ import java.util.Map;
 /**
  *
  */
-public class IndexPairListFragment extends Fragment {
-    public IndexPairListFragment() {
+public class PairListViewFragment extends Fragment {
+
+    public  static  String TAG = PairListViewFragment.class.getSimpleName();
+    public PairListViewFragment() {
         // Required empty public constructor
     }
 
-    public static IndexPairListFragment newInstance() {
-        return new IndexPairListFragment();
+    public static PairListViewFragment newInstance() {
+        return new PairListViewFragment();
     }
 
     @Override
@@ -64,9 +66,30 @@ public class IndexPairListFragment extends Fragment {
             }
         });
 
+        SetEventChangeCoatNum(view);
+
         setAdapters();
 
         addItem();
+    }
+
+    void SetEventChangeCoatNum(@NonNull View view)
+    {
+        Spinner spinner = view.findViewById(R.id.select_court_spinner);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view,
+                                       int position, long id) {
+                Spinner spinner = (Spinner) parent;
+                int num = spinner.getSelectedItemPosition();
+                m_coat = num+1;
+                adapter.clear();
+                addItem();
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+            }
+        });
     }
 
 
@@ -88,6 +111,7 @@ public class IndexPairListFragment extends Fragment {
         }
     }
 
+    protected  int m_coat = 1;
     protected int m_count = 4;
     protected Map<String,Map<String,Object>> m_his;
     protected Map<String,Integer> m_kumiawase;
@@ -185,4 +209,32 @@ public class IndexPairListFragment extends Fragment {
         m_kumiawase.put(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)),v);
     }
 
+    List<String> m_players;
+    public void changeData(List<String> data) {
+        adapter.clear();
+        m_players = data;
+        // adapter.add("Hello!");
+        m_count = data.size();
+        m_his = new HashMap<>();
+        m_kumiawase = new HashMap<>();
+        for(Integer i=0;i<m_count;i++){
+            m_his.put(i.toString(),new HashMap<String,Object>());
+        }
+        int num = 0;
+        for(int i=0;i<20;i++){
+            List<Integer> k = new ArrayList<>();
+            num = getMemberId(num,k);
+            num = getMemberId(num,k);
+            num = getMemberId(num,k);
+            num = getMemberId(num,k);
+            kumiawase(k);
+            String p1=m_players.get(k.get(0));
+            String p2 = m_players.get(k.get(1));
+            String p3 = m_players.get(k.get(2));
+            String p4 = m_players.get(k.get(3));
+            adapter.add(String.format("[%d] %s-%s vs %s-%s",i+1,p1,p2,p3,p4));
+
+
+        }
+    }
 }
