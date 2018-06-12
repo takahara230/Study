@@ -35,13 +35,11 @@ public class SetResultsDialogFragment extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
         // dialog title
-        if (args.containsKey(FIELD_TITLE)) {
-            builder.setTitle(args.getInt(FIELD_TITLE));
-        }
+        builder.setTitle(R.string.fin_game);
 
         // dialog customize content view
         LayoutInflater inflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View content = inflater.inflate(R.layout.dialog_prof, null);
+        View content = inflater.inflate(R.layout.dialog_set_results, null);
         builder.setView(content);
 
 

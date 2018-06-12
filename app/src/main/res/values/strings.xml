@@ -8,6 +8,7 @@
     <string name="menu_cancel">キャンセル</string>
     <string name="menu_delete">削除</string>
     <string name="guide_editText_name">プレイヤー名を入力します</string>
+    <string name="fin_game">試合終了</string>
     <string-array name="list">
         <item>4人</item>
         <item>5人</item>

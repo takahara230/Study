@@ -140,10 +140,20 @@ public class PairListViewFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> parent,
                                         View view, int position, long id) {
-                    // クリックされた時の処理
+                openResDlg();
+
                 }
             });
         }
+    }
+
+    private  void openResDlg(){
+        Bundle args = new Bundle();
+        SetResultsDialogFragment dialogFragment = SetResultsDialogFragment.newInstance(this,1);
+        dialogFragment.setArguments(args);
+        FragmentActivity activity = (FragmentActivity) getContext();
+        dialogFragment.show(activity.getSupportFragmentManager(), getString(R.string.add_member));
+
     }
 
     protected  int m_coat = 1;
