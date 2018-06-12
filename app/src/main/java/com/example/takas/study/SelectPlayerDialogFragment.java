@@ -171,7 +171,7 @@ public class SelectPlayerDialogFragment extends DialogFragment{
 
     /**
      * 要素の削除
-     * @param position
+     * @param position リストの中の位置
      */
     private void deleteItem(int position) {
 

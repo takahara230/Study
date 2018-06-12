@@ -37,7 +37,7 @@ public class PairListViewFragment extends Fragment {
 
     /**
      *
-     * @return　作成フラグメント
+     * @return フラグメント
      */
     public static PairListViewFragment newInstance() {
         return new PairListViewFragment();
@@ -48,7 +48,7 @@ public class PairListViewFragment extends Fragment {
      * @param inflater
      * @param container
      * @param savedInstanceState　復帰時のデータ
-     * @return　作成ビュー
+     * @return 作成ビュー
      */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -164,7 +164,7 @@ public class PairListViewFragment extends Fragment {
 
     /**
      *
-     * @param players
+     * @param players メンバーリスト null の場合は 通し番号
      */
     @SuppressLint("DefaultLocale")
     public void makeFirstPar(List<String> players){

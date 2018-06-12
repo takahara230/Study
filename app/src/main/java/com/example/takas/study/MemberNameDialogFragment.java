@@ -20,7 +20,6 @@ public class MemberNameDialogFragment extends DialogFragment{
     public static final String FIELD_LABEL_POSITIVE = "label_positive";
     public static final String FIELD_LABEL_NEGATIVE = "label_negative";
 
-    private AlertDialog mAlertDialog;
     private EditText mEditName;
 
     public static MemberNameDialogFragment newInstance(Fragment target, int requestCode) {
@@ -50,7 +49,7 @@ public class MemberNameDialogFragment extends DialogFragment{
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
         // dialog title
-        if (args.containsKey(FIELD_TITLE)) {
+        if (args!=null && args.containsKey(FIELD_TITLE)) {
             builder.setTitle(args.getInt(FIELD_TITLE));
         }
 
@@ -62,14 +61,14 @@ public class MemberNameDialogFragment extends DialogFragment{
 
 
         // negative button title and click listener
-        if (args.containsKey(FIELD_LABEL_NEGATIVE)) {
+        if (args!=null && args.containsKey(FIELD_LABEL_NEGATIVE)) {
             builder.setNegativeButton(args.getInt(FIELD_LABEL_NEGATIVE), new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                 }
             });
         }
         // positive button title and click listener
-        if (args.containsKey(FIELD_LABEL_POSITIVE)) {
+        if (args!=null && args.containsKey(FIELD_LABEL_POSITIVE)) {
             builder.setPositiveButton(args.getInt(FIELD_LABEL_POSITIVE), new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -89,10 +88,6 @@ public class MemberNameDialogFragment extends DialogFragment{
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         // make dialog
-        mAlertDialog = builder.create();
-
-        return mAlertDialog;
+        return builder.create();
     }
-
-
 }

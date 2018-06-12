@@ -59,11 +59,8 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         FragmentManager fragmentManager;
         fragmentManager = getSupportFragmentManager();
         PairListViewFragment contentFragment = (PairListViewFragment) fragmentManager.findFragmentByTag(PairListViewFragment.TAG);
-        if(contentFragment == null
-                || !contentFragment.isVisible()){
-        }
-        else{
-//            contentFragment.setText(s);
+        if(!(contentFragment == null
+                || !contentFragment.isVisible())){
             contentFragment.makeFirstPar(data);
         }
     }
