@@ -27,20 +27,40 @@ import java.util.Map;
 public class PairListViewFragment extends Fragment {
 
     public  static  String TAG = PairListViewFragment.class.getSimpleName();
+
+    /**
+     *
+     */
     public PairListViewFragment() {
         // Required empty public constructor
     }
 
+    /**
+     *
+     * @return　作成フラグメント
+     */
     public static PairListViewFragment newInstance() {
         return new PairListViewFragment();
     }
 
+    /**
+     *
+     * @param inflater
+     * @param container
+     * @param savedInstanceState　復帰時のデータ
+     * @return　作成ビュー
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
             return inflater.inflate(R.layout.fragment_number_of_men, container, false);
     }
 
+    /**
+     *
+     * @param view 作られたビュー
+     * @param savedInstanceState 復帰時の保持データか
+     */
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState){
         super.onViewCreated(view,savedInstanceState);
         listView = view.findViewById(R.id.listView1);
@@ -63,9 +83,9 @@ public class PairListViewFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> arg0) {
             }
         });
-
+        // コート数変更イベント処理登録
         SetEventChangeCoatNum(view);
-
+        // リストアダプター設定
         setAdapters();
 
         // 起動直後
@@ -74,7 +94,7 @@ public class PairListViewFragment extends Fragment {
 
     /**
      * コート数変更時の処理記述
-     * @param view
+     * @param view 対象ビュー
      */
     void SetEventChangeCoatNum(@NonNull View view)
     {
@@ -101,6 +121,10 @@ public class PairListViewFragment extends Fragment {
 
     protected List<String> dataList;
     protected ArrayAdapter<String> adapter;
+
+    /**
+     *
+     */
     public void setAdapters(){
         dataList = new ArrayList<>();
         FragmentActivity activity = getActivity();
@@ -110,6 +134,15 @@ public class PairListViewFragment extends Fragment {
                     android.R.layout.simple_list_item_1,
                     dataList);
             listView.setAdapter(adapter);
+
+            // アイテムがクリックされたときに呼び出されるコールバックを登録
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent,
+                                        View view, int position, long id) {
+                    // クリックされた時の処理
+                }
+            });
         }
     }
 
@@ -119,6 +152,10 @@ public class PairListViewFragment extends Fragment {
     protected Map<String,Integer> m_kumiawase;
     protected List<Integer> m_Already;
 
+    /**
+     *
+     * @param players
+     */
     @SuppressLint("DefaultLocale")
     public void makeFirstPar(List<String> players){
         adapter.clear();
@@ -161,6 +198,13 @@ public class PairListViewFragment extends Fragment {
             }
         }
     }
+
+    /**
+     *
+     * @param last_num
+     * @param k
+     * @return
+     */
     Integer getMemberId(int last_num,List<Integer> k){
         for(;;) {
             for (Integer i = 0; i < m_count; i++) {
@@ -180,6 +224,10 @@ public class PairListViewFragment extends Fragment {
         }
     }
 
+    /**
+     *
+     * @param member
+     */
     void kumiawase(List<Integer> member)
     {
         if(m_kumiawase==null){
@@ -218,6 +266,13 @@ public class PairListViewFragment extends Fragment {
         }
     }
 
+    /**
+     *
+     * @param member
+     * @param l0
+     * @param l1
+     * @return
+     */
     Integer kumiawase_count(List<Integer> member, Integer l0,Integer l1)
     {
         Integer m = m_kumiawase.get(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)));
@@ -227,6 +282,13 @@ public class PairListViewFragment extends Fragment {
         return m;
     }
 
+    /**
+     *
+     * @param member
+     * @param l0
+     * @param l1
+     * @param v
+     */
     void kumiawase_inc(List<Integer> member, Integer l0,Integer l1,Integer v)
     {
         m_kumiawase.put(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)),v);

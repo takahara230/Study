@@ -118,18 +118,12 @@ public class SelectPlayerDialogFragment extends DialogFragment{
 
     protected List<String> dataList;
     protected ArrayAdapter<String> adapter;
+
+    /**
+     * アダプターの初期化
+     */
     public void setAdapters(){
         dataList = new ArrayList<>();
-        dataList.add("長瀬");
-        dataList.add("寺本");
-        dataList.add("楮山");
-        dataList.add("竹内");
-        dataList.add("中西");
-        dataList.add("高原");
-        dataList.add("大久保");
-        dataList.add("松田谷");
-        dataList.add("安居");
-        dataList.add("赤木");
         final FragmentActivity activity = getActivity();
         if(activity!=null) {
             adapter = new ArrayAdapter<>(
@@ -175,6 +169,10 @@ public class SelectPlayerDialogFragment extends DialogFragment{
         }
     }
 
+    /**
+     * 要素の削除
+     * @param position
+     */
     private void deleteItem(int position) {
 
         // それぞれの要素を削除
