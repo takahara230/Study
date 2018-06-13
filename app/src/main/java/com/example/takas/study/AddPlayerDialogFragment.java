@@ -13,7 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
-public class MemberNameDialogFragment extends DialogFragment{
+public class AddPlayerDialogFragment extends DialogFragment{
 
     public static final String FIELD_TITLE = "title";
     public static final String FIELD_LAYOUT = "layout";
@@ -22,8 +22,8 @@ public class MemberNameDialogFragment extends DialogFragment{
 
     private EditText mEditName;
 
-    public static MemberNameDialogFragment newInstance(Fragment target, int requestCode) {
-        MemberNameDialogFragment fragment = new MemberNameDialogFragment();
+    public static AddPlayerDialogFragment newInstance(Fragment target, int requestCode) {
+        AddPlayerDialogFragment fragment = new AddPlayerDialogFragment();
         fragment.setTargetFragment(target, requestCode);
 
         Bundle args = new Bundle();

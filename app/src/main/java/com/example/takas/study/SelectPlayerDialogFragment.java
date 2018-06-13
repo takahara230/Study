@@ -45,7 +45,7 @@ public class SelectPlayerDialogFragment extends DialogFragment{
                 if(listView.getCount()<4){
                     new AlertDialog.Builder(getActivity())
                             .setTitle(R.string.select_member)
-                            .setMessage("4人以上選択してください")
+                            .setMessage(R.string.err_few_players)
                             .setPositiveButton("OK",null)
                             .show();
                 }else {
@@ -86,15 +86,18 @@ public class SelectPlayerDialogFragment extends DialogFragment{
     }
 
 
+    /**
+     * 新規メンバー追加ダイアログ呼び出し。
+     */
     private void openDialogOriginalView() {
         Bundle args = new Bundle();
-        args.putInt(MemberNameDialogFragment.FIELD_TITLE, R.string.add_member);
+        args.putInt(AddPlayerDialogFragment.FIELD_TITLE, R.string.add_member);
         // 自分で定義したレイアウト
-        args.putInt(MemberNameDialogFragment.FIELD_LAYOUT, R.layout.dialog_prof);
-        args.putInt(MemberNameDialogFragment.FIELD_LABEL_POSITIVE, android.R.string.ok);
-        args.putInt(MemberNameDialogFragment.FIELD_LABEL_NEGATIVE, android.R.string.cancel);
-        //MemberNameDialogFragment dialogFragment = new MemberNameDialogFragment();
-        MemberNameDialogFragment dialogFragment = MemberNameDialogFragment.newInstance(this,1);
+        args.putInt(AddPlayerDialogFragment.FIELD_LAYOUT, R.layout.dialog_prof);
+        args.putInt(AddPlayerDialogFragment.FIELD_LABEL_POSITIVE, android.R.string.ok);
+        args.putInt(AddPlayerDialogFragment.FIELD_LABEL_NEGATIVE, android.R.string.cancel);
+        //AddPlayerDialogFragment dialogFragment = new AddPlayerDialogFragment();
+        AddPlayerDialogFragment dialogFragment = AddPlayerDialogFragment.newInstance(this,1);
         dialogFragment.setArguments(args);
         FragmentActivity activity = (FragmentActivity) getContext();
         dialogFragment.show(activity.getSupportFragmentManager(), getString(R.string.add_member));

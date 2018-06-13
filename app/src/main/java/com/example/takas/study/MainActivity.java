@@ -9,7 +9,7 @@ import android.view.MenuItem;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnParingListChangeListener {
+public class MainActivity extends AppCompatActivity implements  OnParingListChangeListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,7 +18,7 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
 
         if(savedInstanceState == null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.container, PairListViewFragment.newInstance(), PairListViewFragment.TAG);
+            transaction.replace(R.id.container, MatchTableFragment.newInstance(), MatchTableFragment.TAG);
             transaction.commit();
         }
     }
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
     public void onParingListChanged(List<String> data) {
         FragmentManager fragmentManager;
         fragmentManager = getSupportFragmentManager();
-        PairListViewFragment contentFragment = (PairListViewFragment) fragmentManager.findFragmentByTag(PairListViewFragment.TAG);
+        MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
         if(!(contentFragment == null
                 || !contentFragment.isVisible())){
             contentFragment.makeFirstPar(data);

@@ -5,13 +5,16 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 public class SetResultsDialogFragment extends DialogFragment {
-
-    public static final String FIELD_TITLE = "title";
 
     public static SetResultsDialogFragment newInstance(Fragment target, int requestCode) {
         SetResultsDialogFragment fragment = new SetResultsDialogFragment();
@@ -26,23 +29,85 @@ public class SetResultsDialogFragment extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        FragmentActivity activity = getActivity();
+        if(activity==null) return null;
+        final Dialog dialog = new Dialog(activity, android.R.style.Theme_Material_Light_Dialog);
+        dialog.setContentView(R.layout.dialog_set_results);
+        dialog.setTitle(R.string.fin_game);
 
         Bundle args = getArguments();
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        TextView label_game_no =  dialog.findViewById(R.id.game_no);
+        if(label_game_no!=null){
+            String label = args.getString(MatchTableFragment.GAME_NO);
+            String l = String.format("ゲームNo.%s",label);
+            label_game_no.setText(l);
+        }
+        TextView label_par0 = dialog.findViewById(R.id.label_par1);
+        label_par0.setText(args.getString(MatchTableFragment.PAR_0));
+        TextView label_par1 = dialog.findViewById(R.id.label_par2);
+        label_par1.setText(args.getString(MatchTableFragment.PAR_1));
 
-        // dialog title
+
+        Button btn_cancel = dialog.findViewById(R.id.cancel);
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // クリック時の処理
+                dialog.dismiss();
+            }
+        });
+
+        Button btn_ok = dialog.findViewById(R.id.ok);
+        btn_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                dialog.dismiss();
+            }
+        });
+        Button btn_delete = dialog.findViewById(R.id.delete);
+        btn_delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                dialog.dismiss();
+            }
+        });
+
+
+        return dialog;
+/*
+                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(R.string.fin_game);
 
-        // dialog customize content view
-        LayoutInflater inflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View content = inflater.inflate(R.layout.dialog_set_results, null);
+LayoutInflater inflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View content = inflater.inflate(R.layout.dialog_set_results, null);
         builder.setView(content);
 
+        TextView label_game_no =  content.findViewById(R.id.game_no);
+        if(label_game_no!=null){
+            String label = args.getString(MatchTableFragment.GAME_NO);
+            String l = String.format("ゲームNo.%s",label);
+            label_game_no.setText(l);
+        }
+        TextView label_par0 = content.findViewById(R.id.label_par1);
+        label_par0.setText(args.getString(MatchTableFragment.PAR_0));
+        TextView label_par1 = content.findViewById(R.id.label_par2);
+        label_par1.setText(args.getString(MatchTableFragment.PAR_1));
+
+
+        Button btn_cancel = content.findViewById(R.id.cancel);
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // クリック時の処理
+                content.dismiss();
+            }
+        });
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         // make dialog
         return builder.create();
+        */
     }
 
 

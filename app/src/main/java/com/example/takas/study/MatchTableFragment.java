@@ -24,29 +24,29 @@ import java.util.Map;
 /**
  *
  */
-public class PairListViewFragment extends Fragment {
+public class MatchTableFragment extends Fragment {
 
-    public  static  String TAG = PairListViewFragment.class.getSimpleName();
+    public  static  String TAG = MatchTableFragment.class.getSimpleName();
 
     /**
-     *
+     * デフォルトコンストラクター
      */
-    public PairListViewFragment() {
+    public MatchTableFragment() {
         // Required empty public constructor
     }
 
     /**
-     *
+     * 新規フラグメントインスタンス
      * @return フラグメント
      */
-    public static PairListViewFragment newInstance() {
-        return new PairListViewFragment();
+    public static MatchTableFragment newInstance() {
+        return new MatchTableFragment();
     }
 
     /**
      *
-     * @param inflater
-     * @param container
+     * @param inflater インフラッター
+     * @param container コンテナ
      * @param savedInstanceState　復帰時のデータ
      * @return 作成ビュー
      */
@@ -57,7 +57,7 @@ public class PairListViewFragment extends Fragment {
     }
 
     /**
-     *
+     * view作成後に呼び出される。
      * @param view 作られたビュー
      * @param savedInstanceState 復帰時の保持データか
      */
@@ -123,7 +123,7 @@ public class PairListViewFragment extends Fragment {
     protected ArrayAdapter<String> adapter;
 
     /**
-     *
+     * listアダプターの初期設定
      */
     public void setAdapters(){
         dataList = new ArrayList<>();
@@ -140,15 +140,43 @@ public class PairListViewFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> parent,
                                         View view, int position, long id) {
-                openResDlg();
+                openResDlg(position);
 
                 }
             });
         }
     }
 
-    private  void openResDlg(){
+    /**
+     * アイテムタップ時の処理
+     */
+    private  void openResDlg(int position){
         Bundle args = new Bundle();
+        Map<String,Object> match = m_MatchTable.get(position);
+        String game_no = (String)match.get(GAME_NO);
+        args.putString(GAME_NO,game_no);
+        Integer i0 = (Integer)match.get(PLAYER_0);
+        Integer i1 = (Integer)match.get(PLAYER_1);
+        if(m_players!=null) {
+            String p1 = m_players.get(i0);
+            String p2 = m_players.get(i1);
+            String l = String.format("%s-%s",p1,p2);
+            args.putString(PAR_0,l);
+        }else{
+            String l = String.format("%d-%d",i0+1,i1+1);
+            args.putString(PAR_0,l);
+        }
+        Integer i2 = (Integer)match.get(PLAYER_2);
+        Integer i3 = (Integer)match.get(PLAYER_3);
+        if(m_players!=null) {
+            String p1 = m_players.get(i2);
+            String p2 = m_players.get(i3);
+            String l = String.format("%s-%s",p1,p2);
+            args.putString(PAR_1,l);
+        }else{
+            String l = String.format("%d-%d",i2+1,i3+1);
+            args.putString(PAR_1,l);
+        }
         SetResultsDialogFragment dialogFragment = SetResultsDialogFragment.newInstance(this,1);
         dialogFragment.setArguments(args);
         FragmentActivity activity = (FragmentActivity) getContext();
@@ -156,11 +184,21 @@ public class PairListViewFragment extends Fragment {
 
     }
 
-    protected  int m_coat = 1;
-    protected int m_count = 4;
+    protected  int m_coat = 1;  // コート数
+    protected int m_count = 4;  // メンバー数(無名用)
+    List<String> m_players;     // メンバー名
     protected Map<String,Map<String,Object>> m_his;
     protected Map<String,Integer> m_kumiawase;
     protected List<Integer> m_Already;
+    protected List<Map<String,Object>> m_MatchTable;
+
+    public static  String GAME_NO = "game_no";
+    public static String PLAYER_0 = "player_0";
+    public static String PLAYER_1 = "player_1";
+    public static String PLAYER_2 = "player_2";
+    public static String PLAYER_3 = "player_3";
+    public static String PAR_0 = "par_0";
+    public static String PAR_1 = "par_1";
 
     /**
      *
@@ -171,16 +209,18 @@ public class PairListViewFragment extends Fragment {
         adapter.clear();
         m_his = new HashMap<>();
         m_kumiawase = new HashMap<>();
+        m_MatchTable = new ArrayList<>();
 
         if(players!=null) {
             m_players = players;
             m_count = players.size();
         }
-
+        // 対戦履歴保管用オブジェクト生成
         for(Integer i=0;i<m_count;i++){
             m_his.put(i.toString(),new HashMap<String,Object>());
         }
-        int num = 0;
+        //
+        int num = 0;    // 試合回数、
         for(int i=0;i<m_count*2;i++){
             m_Already = new ArrayList<>();
             for( int c = 0 ; c < m_coat ; c++ ) {
@@ -200,13 +240,25 @@ public class PairListViewFragment extends Fragment {
                 }else{
                     l = String.format("%d-%d vs %d-%d", k.get(0) + 1, k.get(1) + 1, k.get(2) + 1, k.get(3) + 1);
                 }
-
+                String game_no;
                 if(m_coat>1)
-                    adapter.add(String.format("[%d-%d] %s", i + 1, c + 1 , l));
+                    game_no=String.format("[%d-%d]", i + 1, c + 1);
                 else
-                    adapter.add(String.format("[%d] %s", i + 1,l));
+                    game_no=String.format("[%d]", i + 1);
+                l=String.format("%s %s",game_no,l);
+                dataList.add(l);
+                Map<String,Object> match = new HashMap<>();
+                match.put(GAME_NO,game_no);
+                match.put(PLAYER_0,k.get(0));
+                match.put(PLAYER_1,k.get(1));
+                match.put(PLAYER_2,k.get(2));
+                match.put(PLAYER_3,k.get(3));
+                m_MatchTable.add(match);
             }
         }
+
+        // ListView の更新
+        adapter.notifyDataSetChanged();
     }
 
     /**
@@ -304,5 +356,4 @@ public class PairListViewFragment extends Fragment {
         m_kumiawase.put(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)),v);
     }
 
-    List<String> m_players;
 }
