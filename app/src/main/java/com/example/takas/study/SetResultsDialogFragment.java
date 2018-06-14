@@ -1,7 +1,9 @@
 package com.example.takas.study;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -10,9 +12,12 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
+
+import java.util.HashMap;
 
 public class SetResultsDialogFragment extends DialogFragment {
 
@@ -35,7 +40,7 @@ public class SetResultsDialogFragment extends DialogFragment {
         dialog.setContentView(R.layout.dialog_set_results);
         dialog.setTitle(R.string.fin_game);
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
 
         TextView label_game_no =  dialog.findViewById(R.id.game_no);
         if(label_game_no!=null){
@@ -63,6 +68,21 @@ public class SetResultsDialogFragment extends DialogFragment {
             @Override
             public void onClick(View v){
                 dialog.dismiss();
+                Fragment target = getTargetFragment();
+                if (target != null) {
+                    Intent data = new Intent();
+                    HashMap<String, Integer> hashMap = new HashMap<>();
+                    Spinner s1 = dialog.findViewById(R.id.spinner_par1);
+                    Spinner s2 = dialog.findViewById(R.id.spinner_par2);
+                    Integer i1 = s1.getSelectedItemPosition();
+                    Integer i2 = s2.getSelectedItemPosition();
+                    hashMap.put(MatchTableFragment.PAR_0,i1);
+                    hashMap.put(MatchTableFragment.PAR_1,i2);
+                    int pos = args.getInt(MatchTableFragment.GAME_INDEX);
+                    hashMap.put(MatchTableFragment.GAME_INDEX,pos);
+                    data.putExtra("hashMap", hashMap);
+                    target.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, data);
+                }
             }
         });
         Button btn_delete = dialog.findViewById(R.id.delete);

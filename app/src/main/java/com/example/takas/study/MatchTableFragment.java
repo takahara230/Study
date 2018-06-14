@@ -1,6 +1,9 @@
 package com.example.takas.study;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -152,6 +155,7 @@ public class MatchTableFragment extends Fragment {
      */
     private  void openResDlg(int position){
         Bundle args = new Bundle();
+        args.putInt(GAME_INDEX,position);
         Map<String,Object> match = m_MatchTable.get(position);
         String game_no = (String)match.get(GAME_NO);
         args.putString(GAME_NO,game_no);
@@ -177,7 +181,7 @@ public class MatchTableFragment extends Fragment {
             String l = String.format("%d-%d",i2+1,i3+1);
             args.putString(PAR_1,l);
         }
-        SetResultsDialogFragment dialogFragment = SetResultsDialogFragment.newInstance(this,1);
+        SetResultsDialogFragment dialogFragment = SetResultsDialogFragment.newInstance(this,REQUEST_SETRESUTLS);
         dialogFragment.setArguments(args);
         FragmentActivity activity = (FragmentActivity) getContext();
         dialogFragment.show(activity.getSupportFragmentManager(), getString(R.string.add_member));
@@ -193,6 +197,7 @@ public class MatchTableFragment extends Fragment {
     protected List<Map<String,Object>> m_MatchTable;
 
     public static  String GAME_NO = "game_no";
+    public static String GAME_INDEX = "game_index";
     public static String PLAYER_0 = "player_0";
     public static String PLAYER_1 = "player_1";
     public static String PLAYER_2 = "player_2";
@@ -262,10 +267,10 @@ public class MatchTableFragment extends Fragment {
     }
 
     /**
-     *
-     * @param last_num
-     * @param k
-     * @return
+     * 試合数がlast_num以下のメンバーを探すしてセット
+     * @param last_num 試合数
+     * @param k 対象メンバーの出力先
+     * @return 最小試合数
      */
     Integer getMemberId(int last_num,List<Integer> k){
         for(;;) {
@@ -287,8 +292,8 @@ public class MatchTableFragment extends Fragment {
     }
 
     /**
-     *
-     * @param member
+     * 組んだ数が少ない組み合わせを探す
+     * @param member 対象メンバー(4人)
      */
     void kumiawase(List<Integer> member)
     {
@@ -329,11 +334,11 @@ public class MatchTableFragment extends Fragment {
     }
 
     /**
-     *
-     * @param member
-     * @param l0
-     * @param l1
-     * @return
+     * 組み合わせ数を取得
+     * @param member 対象メンバー(4人)
+     * @param l0 メンバー1インデックス
+     * @param l1 メンバー2インデックス
+     * @return 組んだ数
      */
     Integer kumiawase_count(List<Integer> member, Integer l0,Integer l1)
     {
@@ -345,15 +350,38 @@ public class MatchTableFragment extends Fragment {
     }
 
     /**
-     *
-     * @param member
-     * @param l0
-     * @param l1
-     * @param v
+     * 組み合わせの数を登録
+     * @param member 対象メンバー(4人)
+     * @param l0 メンバー1インデックス
+     * @param l1 メンバー2インデックス
+     * @param v 組んだ数
      */
     void kumiawase_inc(List<Integer> member, Integer l0,Integer l1,Integer v)
     {
         m_kumiawase.put(String.format(Locale.US, "%d-%d",member.get(l0),member.get(l1)),v);
     }
+
+    public int REQUEST_SETRESUTLS=100;
+
+    @Override
+    public void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        if (requestCode == REQUEST_SETRESUTLS) {
+            if (resultCode == Activity.RESULT_OK) {
+                // positive_button 押下時の処理
+
+                HashMap<String, Integer> hashMap = (HashMap<String, Integer>) data.getSerializableExtra("hashMap");
+                int pos = hashMap.get(GAME_INDEX);
+                int s0 = hashMap.get(PAR_0);
+                int s1 = hashMap.get(PAR_1);
+                String label = dataList.get(pos);
+                String l = String.format("%s 済( %d x %d )",label,s0,s1);
+                dataList.set(pos,l);
+                adapter.notifyDataSetChanged();
+            } else if (resultCode == DialogInterface.BUTTON_NEGATIVE) {
+                // negative_button 押下時の処理
+            }
+        }
+    }
+
 
 }
