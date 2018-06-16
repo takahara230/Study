@@ -3,6 +3,7 @@ package com.example.takas.study;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
@@ -18,8 +19,13 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.Context.MODE_PRIVATE;
 
 public class SelectPlayerDialogFragment extends DialogFragment{
     public interface SelectPlayerDialogListener {
@@ -42,7 +48,15 @@ public class SelectPlayerDialogFragment extends DialogFragment{
         btn_ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(listView.getCount()<4){
+                List<String> res = new ArrayList<>();
+                int count = listView.getCount();
+                for(int i=0;i<count;i++){
+                    if(listView.isItemChecked(i)){
+                        res.add(dataList.get(i));
+                    }
+                }
+
+                if(res.size()<4){
                     new AlertDialog.Builder(getActivity())
                             .setTitle(R.string.select_member)
                             .setMessage(R.string.err_few_players)
@@ -54,7 +68,7 @@ public class SelectPlayerDialogFragment extends DialogFragment{
                     if(a instanceof OnParingListChangeListener){
                         OnParingListChangeListener listener =
                                 (OnParingListChangeListener) getActivity();
-                        listener.onParingListChanged(dataList);
+                        listener.onParingListChanged(res);
                     }
                     dialog.dismiss();
                 }
@@ -111,7 +125,17 @@ public class SelectPlayerDialogFragment extends DialogFragment{
 
                 String name = data.getStringExtra(Intent.EXTRA_TEXT);
                 if(name!=null && name.length()>0) {
-                    adapter.add(name);
+                    //
+                    // adapter.add(name);
+                    dataList.add(name);
+                    adapter.notifyDataSetChanged();
+                    int count = listView.getCount();
+                    if(count>0)
+                        listView.setItemChecked(count-1,true);
+
+                    SharedPreferences pref = getContext().getSharedPreferences("pref", MODE_PRIVATE);
+                    Gson gson = new Gson();
+                    pref.edit().putString(SAVE_KEY,gson.toJson(dataList)).commit();
                 }
                 return;
         }
@@ -122,11 +146,17 @@ public class SelectPlayerDialogFragment extends DialogFragment{
     protected List<String> dataList;
     protected ArrayAdapter<String> adapter;
 
+    String SAVE_KEY = "players";
     /**
      * アダプターの初期化
      */
     public void setAdapters(){
-        dataList = new ArrayList<>();
+
+        SharedPreferences pref = getContext().getSharedPreferences("pref", MODE_PRIVATE);
+        Gson gson = new Gson();
+        dataList = gson.fromJson(pref.getString(SAVE_KEY, ""), new TypeToken<ArrayList<String>>(){}.getType());
+        if(dataList==null)
+            dataList = new ArrayList<>();
         final FragmentActivity activity = getActivity();
         if(activity!=null) {
             adapter = new ArrayAdapter<>(

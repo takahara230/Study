@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
         MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
         if(!(contentFragment == null
                 || !contentFragment.isVisible())){
-            contentFragment.makeFirstPar(data);
+            contentFragment.makeFirstPar(true,data);
         }
     }
 }

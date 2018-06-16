@@ -80,7 +80,7 @@ public class MatchTableFragment extends Fragment {
                 m_count = num+4;
                 Toast.makeText(view.getContext(), String.valueOf(num), Toast.LENGTH_SHORT).show();
 
-                makeFirstPar(null);
+                makeFirstPar(true,null);
             }
             @Override
             public void onNothingSelected(AdapterView<?> arg0) {
@@ -92,7 +92,7 @@ public class MatchTableFragment extends Fragment {
         setAdapters();
 
         // 起動直後
-        makeFirstPar(null);
+        makeFirstPar(true,null);
     }
 
     /**
@@ -109,7 +109,7 @@ public class MatchTableFragment extends Fragment {
                 Spinner spinner = (Spinner) parent;
                 int num = spinner.getSelectedItemPosition();
                 m_coat = num+1;
-                makeFirstPar(m_players);
+                makeFirstPar(true,m_players);
             }
             @Override
             public void onNothingSelected(AdapterView<?> arg0) {
@@ -143,8 +143,11 @@ public class MatchTableFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> parent,
                                         View view, int position, long id) {
-                openResDlg(position);
-
+                    if(dataList.size()-1==position){
+                        makeFirstPar(false,m_players);
+                    } else {
+                        openResDlg(position);
+                    }
                 }
             });
         }
@@ -167,7 +170,7 @@ public class MatchTableFragment extends Fragment {
             String l = String.format("%s-%s",p1,p2);
             args.putString(PAR_0,l);
         }else{
-            String l = String.format("%d-%d",i0+1,i1+1);
+            String l = String.format(Locale.US,"%d-%d",i0+1,i1+1);
             args.putString(PAR_0,l);
         }
         Integer i2 = (Integer)match.get(PLAYER_2);
@@ -178,7 +181,7 @@ public class MatchTableFragment extends Fragment {
             String l = String.format("%s-%s",p1,p2);
             args.putString(PAR_1,l);
         }else{
-            String l = String.format("%d-%d",i2+1,i3+1);
+            String l = String.format(Locale.US, "%d-%d",i2+1,i3+1);
             args.putString(PAR_1,l);
         }
         SetResultsDialogFragment dialogFragment = SetResultsDialogFragment.newInstance(this,REQUEST_SETRESUTLS);
@@ -188,12 +191,13 @@ public class MatchTableFragment extends Fragment {
 
     }
 
+    protected  int m_match_num = 0; //試合数
     protected  int m_coat = 1;  // コート数
     protected int m_count = 4;  // メンバー数(無名用)
     List<String> m_players;     // メンバー名
     protected Map<String,Map<String,Object>> m_his;
     protected Map<String,Integer> m_kumiawase;
-    protected List<Integer> m_Already;
+//    protected List<Integer> m_Already;
     protected List<Map<String,Object>> m_MatchTable;
 
     public static  String GAME_NO = "game_no";
@@ -210,30 +214,37 @@ public class MatchTableFragment extends Fragment {
      * @param players メンバーリスト null の場合は 通し番号
      */
     @SuppressLint("DefaultLocale")
-    public void makeFirstPar(List<String> players){
-        adapter.clear();
-        m_his = new HashMap<>();
-        m_kumiawase = new HashMap<>();
-        m_MatchTable = new ArrayList<>();
-
+    public void makeFirstPar(boolean clear, List<String> players){
+//        adapter.clear();
         if(players!=null) {
             m_players = players;
             m_count = players.size();
         }
-        // 対戦履歴保管用オブジェクト生成
-        for(Integer i=0;i<m_count;i++){
-            m_his.put(i.toString(),new HashMap<String,Object>());
+        if(clear || m_MatchTable==null) {
+            m_match_num = 0;
+            m_his = new HashMap<>();
+            m_kumiawase = new HashMap<>();
+            m_MatchTable = new ArrayList<>();
+            dataList.clear();
+            // 対戦履歴保管用オブジェクト生成
+            for(Integer i=0;i<m_count;i++){
+                m_his.put(i.toString(),new HashMap<String,Object>());
+            }
+        }else{
+            dataList.remove(dataList.size()-1);
         }
+
         //
-        int num = 0;    // 試合回数、
-        for(int i=0;i<m_count*2;i++){
-            m_Already = new ArrayList<>();
+        int i=m_MatchTable.size()/m_coat;
+        int max = i+4;
+        for(;i<max;i++){
+            //m_Already = new ArrayList<>();
             for( int c = 0 ; c < m_coat ; c++ ) {
                 List<Integer> k = new ArrayList<>();
-                num = getMemberId(num, k);
-                num = getMemberId(num, k);
-                num = getMemberId(num, k);
-                num = getMemberId(num, k);
+                m_match_num = getMemberId(m_match_num, k);
+                m_match_num = getMemberId(m_match_num, k);
+                m_match_num = getMemberId(m_match_num, k);
+                m_match_num = getMemberId(m_match_num, k);
                 kumiawase(k);
                 String l;
                 if(players!=null) {
@@ -261,6 +272,8 @@ public class MatchTableFragment extends Fragment {
                 m_MatchTable.add(match);
             }
         }
+
+        dataList.add("< 組み合わせ追加... >");
 
         // ListView の更新
         adapter.notifyDataSetChanged();
@@ -373,14 +386,43 @@ public class MatchTableFragment extends Fragment {
                 int pos = hashMap.get(GAME_INDEX);
                 int s0 = hashMap.get(PAR_0);
                 int s1 = hashMap.get(PAR_1);
-                String label = dataList.get(pos);
-                String l = String.format("%s 済( %d x %d )",label,s0,s1);
+                String label = makeParLabel(pos);
+                String l = String.format(Locale.US,"%s ( %d x %d )完",label,s0,s1);
                 dataList.set(pos,l);
                 adapter.notifyDataSetChanged();
             } else if (resultCode == DialogInterface.BUTTON_NEGATIVE) {
                 // negative_button 押下時の処理
             }
         }
+    }
+
+    String makeParLabel(int position)
+    {
+        Map<String,Object> match = m_MatchTable.get(position);
+        String game_no = (String)match.get(GAME_NO);
+        Integer i0 = (Integer)match.get(PLAYER_0);
+        Integer i1 = (Integer)match.get(PLAYER_1);
+        String l0;
+        if(m_players!=null) {
+            String p1 = m_players.get(i0);
+            String p2 = m_players.get(i1);
+            l0 = String.format("%s-%s",p1,p2);
+        }else{
+            l0 = String.format(Locale.US,"%d-%d",i0+1,i1+1);
+
+        }
+        Integer i2 = (Integer)match.get(PLAYER_2);
+        Integer i3 = (Integer)match.get(PLAYER_3);
+        String l1;
+        if(m_players!=null) {
+            String p1 = m_players.get(i2);
+            String p2 = m_players.get(i3);
+            l1 = String.format("%s-%s",p1,p2);
+        }else{
+            l1 = String.format(Locale.US, "%d-%d",i2+1,i3+1);
+        }
+        String l = String.format("%s %s vs %s",game_no,l0,l1);
+        return l;
     }
 
 
