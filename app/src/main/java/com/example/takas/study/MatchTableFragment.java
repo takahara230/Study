@@ -77,6 +77,7 @@ public class MatchTableFragment extends Fragment {
                 Spinner spinner = (Spinner) parent;
                 // 選択されたアイテムを取得します
                 int num = spinner.getSelectedItemPosition();
+                m_players = null;
                 m_count = num+4;
                 Toast.makeText(view.getContext(), String.valueOf(num), Toast.LENGTH_SHORT).show();
 

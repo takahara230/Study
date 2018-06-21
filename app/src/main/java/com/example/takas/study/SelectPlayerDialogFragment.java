@@ -28,9 +28,6 @@ import java.util.List;
 import static android.content.Context.MODE_PRIVATE;
 
 public class SelectPlayerDialogFragment extends DialogFragment{
-    public interface SelectPlayerDialogListener {
-        void onDialogPositiveClick(List<String> data);
-    }
 
     @NonNull
     @Override
