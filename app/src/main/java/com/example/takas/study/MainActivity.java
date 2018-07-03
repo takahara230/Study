@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -33,16 +34,26 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends AppCompatActivity implements  OnParingListChangeListener,EasyPermissions.PermissionCallbacks  {
+public class MainActivity extends AppCompatActivity implements OnParingListChangeListener, EasyPermissions.PermissionCallbacks {
+    public static String PREF_REG_PLAYERS = "reg_players";
+
+    public static String KEY_NAME = "name";
+    public static String KEY_SELECTION = "selection";
+    public static String KEY_LEVEL = "level";
 
     ProgressDialog mProgress;
     MainActivity _activity;
@@ -52,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if(savedInstanceState == null) {
+        if (savedInstanceState == null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.container, MatchTableFragment.newInstance(), MatchTableFragment.TAG);
             transaction.commit();
@@ -66,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -84,31 +94,46 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.select_member) {
-
-
             // DialogFragment を表示します
             SelectPlayerDialogFragment exampleDialogFragment = new SelectPlayerDialogFragment();
             exampleDialogFragment.show(getSupportFragmentManager(),
                     SelectPlayerDialogFragment.class.getSimpleName());
 
             return true;
-        }else if(id == R.id.action_settings){
-            getResultsFromApi();
+        } else if (id == R.id.action_google) {
+            getResultsFromApi(false);
+        } else if (id == R.id.action_google_reload) {
+            getResultsFromApi(true);
+        }else if(id == R.id.action_google_reset){
+
+        } else if (id == R.id.action_settings) {
+
         }
-
         return super.onOptionsItemSelected(item);
-
     }
 
     @Override
-    public void onParingListChanged(List<String> data) {
+    public void onParingListChanged(ArrayList<HashMap<String, String>> data) {
         FragmentManager fragmentManager;
         fragmentManager = getSupportFragmentManager();
         MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
-        if(!(contentFragment == null
-                || !contentFragment.isVisible())){
-            contentFragment.makeFirstPar(true,data);
+        if (!(contentFragment == null
+                || !contentFragment.isVisible())) {
+            contentFragment.makeFirstPar2(data);
         }
+    }
+
+    public void SelectPlayers(ArrayList<HashMap<String, String>> players) {
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        Gson gson = new Gson();
+        pref.edit().putString(PREF_GOOGLE_PLAYERS, gson.toJson(players)).commit();
+        SelectPlayersSub(players);
+    }
+
+    public void SelectPlayersSub(ArrayList<HashMap<String, String>> players) {
+        SelectPlayerDialogFragment exampleDialogFragment = SelectPlayerDialogFragment.newInstance(true, players);
+        exampleDialogFragment.show(getSupportFragmentManager(),
+                SelectPlayerDialogFragment.class.getSimpleName());
     }
 
 
@@ -117,10 +142,11 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
-    private static final String BUTTON_TEXT = "Call Google Sheets API";
     private static final String PREF_ACCOUNT_NAME = "accountName";
-    private static final String[] SCOPES = { SheetsScopes.SPREADSHEETS_READONLY };
+    private static final String[] SCOPES = {SheetsScopes.SPREADSHEETS_READONLY};
     GoogleAccountCredential mCredential;
+
+    public String PREF_GOOGLE_PLAYERS = "google_players";
 
     /**
      * Attempt to call the API, after verifying that all the preconditions are
@@ -129,16 +155,26 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
      * of the preconditions are not satisfied, the app will prompt the user as
      * appropriate.
      */
-    private void getResultsFromApi() {
-        if (! isGooglePlayServicesAvailable()) {
+    private void getResultsFromApi(boolean reset) {
+        if (!reset) {
+            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+            Gson gson = new Gson();
+            ArrayList<HashMap<String, String>> data = gson.fromJson(pref.getString(PREF_GOOGLE_PLAYERS, ""), new TypeToken<ArrayList<HashMap<String, String>>>() {
+            }.getType());
+            if (data != null) {
+                SelectPlayersSub(data);
+                return;
+            }
+        }
+        if (!isGooglePlayServicesAvailable()) {
             acquireGooglePlayServices();
         } else if (mCredential.getSelectedAccountName() == null) {
             chooseAccount();
-        } else if (! isDeviceOnline()) {
+        } else if (!isDeviceOnline()) {
             //mOutputText.setText("No network connection available.");
 //            Log.d("","No network connection available.");
             String text = "No network connection available.";
-            Toast.makeText(_activity,text , Toast.LENGTH_SHORT).show();
+            Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
 
         } else {
             new MakeRequestTask(mCredential).execute();
@@ -163,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
                     .getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 mCredential.setSelectedAccountName(accountName);
-                getResultsFromApi();
+                getResultsFromApi(true);
             } else {
                 // Start a dialog from which the user can choose an account
                 startActivityForResult(
@@ -184,24 +220,25 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
      * Called when an activity launched here (specifically, AccountPicker
      * and authorization) exits, giving you the requestCode you started it with,
      * the resultCode it returned, and any additional data from it.
+     *
      * @param requestCode code indicating which activity result is incoming.
-     * @param resultCode code indicating the result of the incoming
-     *     activity result.
-     * @param data Intent (containing result data) returned by incoming
-     *     activity result.
+     * @param resultCode  code indicating the result of the incoming
+     *                    activity result.
+     * @param data        Intent (containing result data) returned by incoming
+     *                    activity result.
      */
     @Override
     protected void onActivityResult(
             int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        switch(requestCode) {
+        switch (requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
-     //               mOutputText.setText(
-     //                       "This app requires Google Play Services. Please install " +
-     //                               "Google Play Services on your device and relaunch this app.");
+                    //               mOutputText.setText(
+                    //                       "This app requires Google Play Services. Please install " +
+                    //                               "Google Play Services on your device and relaunch this app.");
                 } else {
-                    getResultsFromApi();
+                    getResultsFromApi(true);
                 }
                 break;
             case REQUEST_ACCOUNT_PICKER:
@@ -216,13 +253,13 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
                         mCredential.setSelectedAccountName(accountName);
-                        getResultsFromApi();
+                        getResultsFromApi(true);
                     }
                 }
                 break;
             case REQUEST_AUTHORIZATION:
                 if (resultCode == RESULT_OK) {
-                    getResultsFromApi();
+                    getResultsFromApi(true);
                 }
                 break;
         }
@@ -230,11 +267,12 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
 
     /**
      * Respond to requests for permissions at runtime for API 23 and above.
-     * @param requestCode The request code passed in
-     *     requestPermissions(android.app.Activity, String, int, String[])
-     * @param permissions The requested permissions. Never null.
+     *
+     * @param requestCode  The request code passed in
+     *                     requestPermissions(android.app.Activity, String, int, String[])
+     * @param permissions  The requested permissions. Never null.
      * @param grantResults The grant results for the corresponding permissions
-     *     which is either PERMISSION_GRANTED or PERMISSION_DENIED. Never null.
+     *                     which is either PERMISSION_GRANTED or PERMISSION_DENIED. Never null.
      */
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -248,9 +286,10 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
     /**
      * Callback for when a permission is granted using the EasyPermissions
      * library.
+     *
      * @param requestCode The request code associated with the requested
-     *         permission
-     * @param list The requested permission list. Never null.
+     *                    permission
+     * @param list        The requested permission list. Never null.
      */
     @Override
     public void onPermissionsGranted(int requestCode, List<String> list) {
@@ -260,9 +299,10 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
     /**
      * Callback for when a permission is denied using the EasyPermissions
      * library.
+     *
      * @param requestCode The request code associated with the requested
-     *         permission
-     * @param list The requested permission list. Never null.
+     *                    permission
+     * @param list        The requested permission list. Never null.
      */
     @Override
     public void onPermissionsDenied(int requestCode, List<String> list) {
@@ -271,6 +311,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
 
     /**
      * Checks whether the device currently has a network connection.
+     *
      * @return true if the device has a network connection, false otherwise.
      */
     private boolean isDeviceOnline() {
@@ -282,8 +323,9 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
 
     /**
      * Check that Google Play services APK is installed and up to date.
+     *
      * @return true if Google Play Services is available and up to
-     *     date on this device; false otherwise.
+     * date on this device; false otherwise.
      */
     private boolean isGooglePlayServicesAvailable() {
         GoogleApiAvailability apiAvailability =
@@ -311,8 +353,9 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
     /**
      * Display an error dialog showing that Google Play Services is missing
      * or out of date.
+     *
      * @param connectionStatusCode code describing the presence (or lack of)
-     *     Google Play Services on this device.
+     *                             Google Play Services on this device.
      */
     void showGooglePlayServicesAvailabilityErrorDialog(
             final int connectionStatusCode) {
@@ -328,7 +371,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
      * An asynchronous task that handles the Google Sheets API call.
      * Placing the API calls in their own task ensures the UI stays responsive.
      */
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+    private class MakeRequestTask extends AsyncTask<Void, Void, ArrayList<HashMap<String, String>>> {
         private com.google.api.services.sheets.v4.Sheets mService = null;
         private Exception mLastError = null;
 
@@ -347,7 +390,7 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
          * @param params no parameters needed for this task.
          */
         @Override
-        protected List<String> doInBackground(Void... params) {
+        protected ArrayList<HashMap<String, String>> doInBackground(Void... params) {
             try {
                 return getDataFromApi();
             } catch (Exception e) {
@@ -360,23 +403,38 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
         /**
          * Fetch a list of names and majors of students in a sample spreadsheet:
          * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-         *https://docs.google.com/spreadsheets/d/1jhz33Rp4ad-KwuLW4XbVa-M3DI_PMH7J6R8PiR0hP1I/edit
+         * https://docs.google.com/spreadsheets/d/1jhz33Rp4ad-KwuLW4XbVa-M3DI_PMH7J6R8PiR0hP1I/edit
+         *
          * @return List of names and majors
          * @throws IOException
          */
-        private List<String> getDataFromApi() throws IOException {
+        private ArrayList<HashMap<String, String>> getDataFromApi() throws IOException {
             String spreadsheetId = "1jhz33Rp4ad-KwuLW4XbVa-M3DI_PMH7J6R8PiR0hP1I";
-            String range = "players!A1:A4";
-            List<String> results = new ArrayList<String>();
-            ValueRange response = this.mService.spreadsheets().values()
-                    .get(spreadsheetId, range)
-                    .execute();
-            List<List<Object>> values = response.getValues();
-            if (values != null) {
-                results.add("Name");
-                for (List row : values) {
-                    results.add(row.get(0) + ", ");
+            String range0 = "players!";
+            ArrayList<HashMap<String, String>> results = new ArrayList<>();
+
+            int start = 1;
+            int len = 10;
+            for (; ; ) {
+                String range = range0 + "A" + start + ":B" + (start + len);
+                ValueRange response = this.mService.spreadsheets().values()
+                        .get(spreadsheetId, range)
+                        .execute();
+                List<List<Object>> values = response.getValues();
+                if (values != null) {
+                    for (List row : values) {
+                        String name = (String) row.get(0);
+                        if (name.length() == 0) return results;
+                        String res = (String) row.get(1);
+                        HashMap<String, String> player = new HashMap<>();
+                        player.put(KEY_NAME, name);
+                        player.put(KEY_LEVEL, res);
+                        results.add(player);
+                    }
+                } else {
+                    break;
                 }
+                start += len;
             }
             return results;
         }
@@ -389,16 +447,18 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
         }
 
         @Override
-        protected void onPostExecute(List<String> output) {
+        protected void onPostExecute(ArrayList<HashMap<String, String>> output) {
             mProgress.hide();
             if (output == null || output.size() == 0) {
 //                mOutputText.setText("No results returned.");
-                Toast.makeText(_activity,"No results returned." , Toast.LENGTH_SHORT).show();
+                Toast.makeText(_activity, "No results returned.", Toast.LENGTH_SHORT).show();
             } else {
+                /*
                 output.add(0, "Data retrieved using the Google Sheets API:");
                 String text = TextUtils.join("\n", output);
-                //mOutputText.setText(TextUtils.join("\n", output));
                 Toast.makeText(_activity,text , Toast.LENGTH_SHORT).show();
+                */
+                _activity.SelectPlayers(output);
             }
         }
 
@@ -417,12 +477,12 @@ public class MainActivity extends AppCompatActivity implements  OnParingListChan
                 } else {
 //                    mOutputText.setText("The following error occurred:\n"                            + mLastError.getMessage());
                     String text = "The following error occurred:\n" + mLastError.getMessage();
-                    Toast.makeText(_activity,text , Toast.LENGTH_SHORT).show();
+                    Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
                 }
             } else {
                 //mOutputText.setText("Request cancelled.");
                 String text = "Request cancelled.";
-                Toast.makeText(_activity,text , Toast.LENGTH_SHORT).show();
+                Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
             }
         }
     }

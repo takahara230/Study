@@ -9,6 +9,21 @@
         android:title="@string/select_member"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_google"
+        android:orderInCategory="100"
+        android:title="@string/action_google"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_google_reload"
+        android:orderInCategory="100"
+        android:title="@string/action_google_reload"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_google_reset"
+        android:orderInCategory="100"
+        android:title="@string/action_google_reset"
+        app:showAsAction="never"/>
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="101"
         android:title="@string/action_settings"
