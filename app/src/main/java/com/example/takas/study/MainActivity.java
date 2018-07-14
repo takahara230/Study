@@ -10,14 +10,12 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -42,14 +40,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.RejectedExecutionException;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements OnParingListChangeListener, EasyPermissions.PermissionCallbacks {
-    public static String PREF_REG_PLAYERS = "reg_players";
+    public CmDef.PAIR_SOURCE m_parSource;
+
+    public static String PREF_REG_PLAYERS = "reg_players";  // ローカル登録
+    public static String PREF_GOOGLE_PLAYERS = "google_players";  // GoogleSpreadから読み込んだデータのローカル保存データ
+    public static String PREF_GOOGLE_SELECTTION = "google_selection"; //
+    public static String PREF_LOCAL_SELECTTION = "local_selection"; //
+
 
     public static String KEY_NAME = "name";
     public static String KEY_SELECTION = "selection";
@@ -68,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             transaction.replace(R.id.container, MatchTableFragment.newInstance(), MatchTableFragment.TAG);
             transaction.commit();
         }
+
+        m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX;
         _activity = this;
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("Calling Google Sheets API ...");
@@ -84,6 +88,56 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        /*
+            MenuItem changeMenu = menu.findItem(R.id.action_select_change);
+            changeMenu.setVisible(m_parSource != CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX);
+*/
+        /*
+            MenuItem google = menu.findItem(R.id.action_google);
+            google.setVisible(m_parSource != CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD);
+
+            MenuItem reg = menu.findItem(R.id.action_reg_member);
+            reg.setVisible(m_parSource != CmDef.PAIR_SOURCE.PAIR_SOURCE_LOCAL_REG);
+
+            MenuItem index = menu.findItem(R.id.action_index);
+            index.setVisible(m_parSource != CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX);
+            */
+
+        return true;
+    }
+
+    public void changeButton()
+    {
+        if(m_parSource== CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD){
+            readGoogleSpread(true);
+        }else if(m_parSource == CmDef.PAIR_SOURCE.PAIR_SOURCE_LOCAL_REG){
+            openRegNameDialog();
+        }else if(m_parSource == CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX){
+            SelectNumber();
+        }
+    }
+
+    public void SelectNumber()
+    {
+        String title = getResources().getString(R.string.action_index);
+        CommonDialogFragment newFragment = CommonDialogFragment.newInstance(title, m_number,REQUEST_SELECT_NUMBER);
+        newFragment.show(getSupportFragmentManager(), CommonDialogFragment.TAG);
+    }
+    private  int m_number = 4;
+    public void MembarOfNumber(Intent data)
+    {
+        m_number = CommonDialogFragment.getNumber(data);
+        FragmentManager fragmentManager;
+        fragmentManager = getSupportFragmentManager();
+        MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
+        if (!(contentFragment == null
+                || !contentFragment.isVisible())) {
+            contentFragment.makePar(true,m_number);
+        }
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -93,36 +147,99 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.select_member) {
-            // DialogFragment を表示します
-            SelectPlayerDialogFragment exampleDialogFragment = new SelectPlayerDialogFragment();
-            exampleDialogFragment.show(getSupportFragmentManager(),
-                    SelectPlayerDialogFragment.class.getSimpleName());
-
-            return true;
-        } else if (id == R.id.action_google) {
-            getResultsFromApi(false);
-        } else if (id == R.id.action_google_reload) {
-            getResultsFromApi(true);
-        }else if(id == R.id.action_google_reset){
-
+        if (id == R.id.action_google) {
+            readGoogleSpread(m_parSource == CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD);
+        }/* else if (id == R.id.action_select_change) {
+            if(m_parSource== CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD){
+                readGoogleSpread(true);
+            }else if(m_parSource == CmDef.PAIR_SOURCE.PAIR_SOURCE_LOCAL_REG){
+                openRegNameDialog();
+            }
+        }*/else if(id == R.id.action_reg_member) {
+            openRegNameDialog();
+        }else if(id == R.id.action_index){
+            SelectNumber();
         } else if (id == R.id.action_settings) {
 
         }
         return super.onOptionsItemSelected(item);
     }
 
+    public void openRegNameDialog()
+    {
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        Gson gson = new Gson();
+        ArrayList<HashMap<String,String>> players = gson.fromJson(pref.getString(MainActivity.PREF_REG_PLAYERS, ""), new TypeToken<ArrayList<HashMap<String,String>>>() {
+        }.getType());
+        if (players != null) {
+            ArrayList<HashMap<String, String>> data = CmUtils.UserPrefJsonGet(this, MainActivity.PREF_LOCAL_SELECTTION, new TypeToken<ArrayList<HashMap<String, String>>>() {
+            }.getType());
+            if (data != null) {
+                for (int index = 0; index < players.size(); index++) {
+                    HashMap<String, String> p = players.get(index);
+                    HashMap<String, String> s = null;
+                    if (index < data.size()) {
+                        s = data.get(index);
+                    }
+                    String selection = "1";
+                    if (s != null) {
+                        selection = s.get(MainActivity.KEY_SELECTION);
+                    }
+                    p.put(MainActivity.KEY_SELECTION, selection);
+                }
+            }
+        }else{
+            players = new ArrayList<>();
+        }
+
+        // DialogFragment を表示します
+        SelectPlayerDialogFragment exampleDialogFragment = SelectPlayerDialogFragment.newInstance(false,players);
+        exampleDialogFragment.show(getSupportFragmentManager(),
+                SelectPlayerDialogFragment.class.getSimpleName());
+    }
+
+    public void readGoogleSpread(boolean currentGoogle)
+    {
+        SettingGoogleSpreadDialogFragment dialogFragment = SettingGoogleSpreadDialogFragment.newInstance(currentGoogle);
+//        dialogFragment.setArguments(args);
+//        FragmentActivity activity = (FragmentActivity) getContext();
+        dialogFragment.show(getSupportFragmentManager(), getString(R.string.add_member));
+    }
+
+    /**
+     * OnParingListChangeListener リスナー
+     * メンバー確定
+     * @param data
+     * @param googleSpread true:google spread から false:ローカル登録
+     */
     @Override
-    public void onParingListChanged(ArrayList<HashMap<String, String>> data) {
+    public void onParingListChanged(ArrayList<HashMap<String, String>> data,boolean googleSpread) {
         FragmentManager fragmentManager;
         fragmentManager = getSupportFragmentManager();
         MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
         if (!(contentFragment == null
                 || !contentFragment.isVisible())) {
-            contentFragment.makeFirstPar2(data);
+
+            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+            Gson gson = new Gson();
+            String key = googleSpread?PREF_GOOGLE_SELECTTION:PREF_LOCAL_SELECTTION;
+            pref.edit().putString(key, gson.toJson(data)).commit();
+
+
+            if(googleSpread)
+                m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD;
+            else
+                m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_LOCAL_REG;
+
+            // 選択されたメンバーから組み合わせ作成
+            contentFragment.makeFirstPar2(data,googleSpread,m_allClear);
         }
     }
 
+    /**
+     * google spread データを保存してから選択ダイアログ呼び出し。
+     * @param players
+     */
     public void SelectPlayers(ArrayList<HashMap<String, String>> players) {
         SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
         Gson gson = new Gson();
@@ -130,23 +247,66 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         SelectPlayersSub(players);
     }
 
+    public ArrayList<HashMap<String,String>> getSaveGoogleData() {
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        Gson gson = new Gson();
+        ArrayList<HashMap<String, String>> data = gson.fromJson(pref.getString(PREF_GOOGLE_PLAYERS, ""), new TypeToken<ArrayList<HashMap<String, String>>>() {
+        }.getType());
+        return data;
+    }
+
+    /**
+     * google soread から読み込んだデータから選択
+     * @param players
+     */
     public void SelectPlayersSub(ArrayList<HashMap<String, String>> players) {
+        ArrayList<HashMap<String,String>> data = CmUtils.UserPrefJsonGet(this,PREF_GOOGLE_SELECTTION, new TypeToken<ArrayList<HashMap<String, String>>>() {
+        }.getType());
+        if(data!=null){
+            for(int index=0;index<players.size();index++){
+                HashMap<String,String> p = players.get(index);
+                HashMap<String,String> s = null;
+                if(index<data.size()) {
+                    s = data.get(index);
+                }
+                String selection = "1";
+                if(s!=null){
+                    selection = s.get(KEY_SELECTION);
+                }
+                p.put(KEY_SELECTION,selection);
+            }
+        }
+
         SelectPlayerDialogFragment exampleDialogFragment = SelectPlayerDialogFragment.newInstance(true, players);
         exampleDialogFragment.show(getSupportFragmentManager(),
                 SelectPlayerDialogFragment.class.getSimpleName());
     }
 
+    boolean m_allClear;
+
+    public void readFromGoogle(boolean reset,String spreadsheetId,String sheetName,boolean allClear) {
+        m_allClear = allClear;
+
+        SharedPreferences.Editor editor = getPreferences(Context.MODE_PRIVATE).edit();
+
+        editor.putString(CmDef.PREF_SPREADSHEETID,spreadsheetId);
+        editor.putString(CmDef.PREF_SHEETNAME,sheetName);
+
+        editor.commit();
+
+        getResultsFromApi(reset);
+    }
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
+    static final int REQUEST_SELECT_NUMBER = 1004;
 
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = {SheetsScopes.SPREADSHEETS_READONLY};
     GoogleAccountCredential mCredential;
 
-    public String PREF_GOOGLE_PLAYERS = "google_players";
 
     /**
      * Attempt to call the API, after verifying that all the preconditions are
@@ -155,12 +315,9 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
      * of the preconditions are not satisfied, the app will prompt the user as
      * appropriate.
      */
-    private void getResultsFromApi(boolean reset) {
+    public void getResultsFromApi(boolean reset) {
         if (!reset) {
-            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-            Gson gson = new Gson();
-            ArrayList<HashMap<String, String>> data = gson.fromJson(pref.getString(PREF_GOOGLE_PLAYERS, ""), new TypeToken<ArrayList<HashMap<String, String>>>() {
-            }.getType());
+            ArrayList<HashMap<String, String>> data = getSaveGoogleData();
             if (data != null) {
                 SelectPlayersSub(data);
                 return;
@@ -260,6 +417,11 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             case REQUEST_AUTHORIZATION:
                 if (resultCode == RESULT_OK) {
                     getResultsFromApi(true);
+                }
+                break;
+            case REQUEST_SELECT_NUMBER:
+                if(resultCode == RESULT_OK){
+                    MembarOfNumber(data);
                 }
                 break;
         }
@@ -409,8 +571,12 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
          * @throws IOException
          */
         private ArrayList<HashMap<String, String>> getDataFromApi() throws IOException {
-            String spreadsheetId = "1jhz33Rp4ad-KwuLW4XbVa-M3DI_PMH7J6R8PiR0hP1I";
-            String range0 = "players!";
+            String spreadsheetId = getPreferences(Context.MODE_PRIVATE).getString(CmDef.PREF_SPREADSHEETID,null);
+            String sheetName = getPreferences(Context.MODE_PRIVATE).getString(CmDef.PREF_SHEETNAME,null);
+
+//            String spreadsheetId = "1jhz33Rp4ad-KwuLW4XbVa-M3DI_PMH7J6R8PiR0hP1I";
+//            String range0 = "players!";
+            String range0 = sheetName+"!";
             ArrayList<HashMap<String, String>> results = new ArrayList<>();
 
             int start = 1;

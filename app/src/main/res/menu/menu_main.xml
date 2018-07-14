@@ -4,9 +4,9 @@
     tools:context="com.example.takas.study.MainActivity">
 
     <item
-        android:id="@+id/select_member"
+        android:id="@+id/action_reg_member"
         android:orderInCategory="100"
-        android:title="@string/select_member"
+        android:title="@string/action_reg_member"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_google"
@@ -14,14 +14,9 @@
         android:title="@string/action_google"
         app:showAsAction="never"/>
     <item
-        android:id="@+id/action_google_reload"
+        android:id="@+id/action_index"
         android:orderInCategory="100"
-        android:title="@string/action_google_reload"
-        app:showAsAction="never"/>
-    <item
-        android:id="@+id/action_google_reset"
-        android:orderInCategory="100"
-        android:title="@string/action_google_reset"
+        android:title="@string/action_index"
         app:showAsAction="never"/>
     <item
         android:id="@+id/action_settings"

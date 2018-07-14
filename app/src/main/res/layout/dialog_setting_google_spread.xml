@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:minWidth="300dp"
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+<ScrollView android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <CheckBox
+        android:id="@+id/download_data_reuse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/download_data_reuse"
+/>
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/label_url"
+  />
+    <EditText
+        android:id="@+id/editGoogleUrl"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:inputType="text"
+/>
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/label_sheet_name"
+/>
+    <EditText
+        android:id="@+id/editSheetName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:inputType="text"
+  />
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/label_clear_way_choice"
+        />
+    <RadioGroup
+        android:id="@+id/radioGroupCLear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+>
+        <RadioButton
+            android:id="@+id/rb_all_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_all_clear" />
+
+        <RadioButton
+            android:id="@+id/rb_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_incomplete_game_clear" />
+    </RadioGroup>
+
+
+
+
+</LinearLayout>
+</ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="right"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_ok" />
+
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_cancel" />
+    </LinearLayout>
+</LinearLayout>

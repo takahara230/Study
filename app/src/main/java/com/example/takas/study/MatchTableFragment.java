@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -56,10 +57,12 @@ public class MatchTableFragment extends Fragment {
      * @return 作成ビュー
      */
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             return inflater.inflate(R.layout.fragment_number_of_men, container, false);
     }
+
+    boolean m_haveSpreadCash;
+    Button m_change_button;
 
     /**
      * view作成後に呼び出される。
@@ -68,36 +71,31 @@ public class MatchTableFragment extends Fragment {
      */
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState){
         super.onViewCreated(view,savedInstanceState);
-        listView = view.findViewById(R.id.listView1);
 
-        Spinner spinner = view.findViewById(R.id.spinner);
-        // スピナーのアイテムが選択された時に呼び出されるコールバックリスナーを登録します
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        final MainActivity activity = (MainActivity)getActivity();
+        ArrayList<HashMap<String,String>> data = activity.getSaveGoogleData();
+        m_haveSpreadCash = data!=null;
+
+        listView = view.findViewById(R.id.listView1);
+        m_change_button = view.findViewById(R.id.button_change);
+        //m_spinner.setSelection(m_spinnerPosition);
+        m_change_button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view,
-                                       int position, long id) {
-                Spinner spinner = (Spinner) parent;
-                // 選択されたアイテムを取得します
-                int num = spinner.getSelectedItemPosition();
-//                m_players = null;
-                m_players2 = null;
-                m_count = num+4;
-                Toast.makeText(view.getContext(), String.valueOf(num), Toast.LENGTH_SHORT).show();
-                // 人数変更
-                makePar(true);
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0) {
+            public void onClick(View v) {
+                // クリック時の処理
+                activity.changeButton();
             }
         });
+
         // コート数変更イベント処理登録
         SetEventChangeCoatNum(view);
         // リストアダプター設定
         setAdapters();
-
         // 起動直後
-        makePar(true);
+        makePar(true,4);
+
     }
+
 
     /**
      * コート数変更時の処理記述
@@ -105,6 +103,7 @@ public class MatchTableFragment extends Fragment {
      */
     void SetEventChangeCoatNum(@NonNull View view)
     {
+        /*
         Spinner spinner = view.findViewById(R.id.select_court_spinner);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -123,6 +122,7 @@ public class MatchTableFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> arg0) {
             }
         });
+        */
     }
 
 
@@ -156,7 +156,7 @@ public class MatchTableFragment extends Fragment {
 
                         // リスト追加
                         if(m_players2==null)
-                            makePar(false);
+                            makePar(false,m_number);
                         else
                             makePar2(false);
                     } else {
@@ -211,7 +211,7 @@ public class MatchTableFragment extends Fragment {
 
     protected  int m_match_num = 0; //試合数
     protected  int m_coat = 1;  // コート数
-    protected int m_count = 4;  // メンバー数(無名用)
+    protected int m_number = 4;  // メンバー数(無名用)
 //    List<String> m_players;     // メンバー名
     protected Map<String,Map<String,Object>> m_his;
     protected Map<String,Integer> m_kumiawase;
@@ -232,16 +232,19 @@ public class MatchTableFragment extends Fragment {
      *
      */
     @SuppressLint("DefaultLocale")
-    public void makePar(boolean clear){
+    public void makePar(boolean clear,int number){
 //        adapter.clear();
+        String string = getString(R.string.action_index_label);
+        m_change_button.setText(String.format(string,number));
         if(clear || m_MatchTable==null) {
+            m_number = number;
             m_match_num = 0;
             m_his = new HashMap<>();
             m_kumiawase = new HashMap<>();
             m_MatchTable = new ArrayList<>();
             dataList.clear();
             // 対戦履歴保管用オブジェクト生成
-            for(Integer i=0;i<m_count;i++){
+            for(Integer i=0;i<m_number;i++){
                 m_his.put(i.toString(),new HashMap<String,Object>());
             }
         }else{
@@ -367,10 +370,13 @@ public class MatchTableFragment extends Fragment {
      * google spread から取り込んだ
      * @param players
      */
-    public void makeFirstPar2(ArrayList<HashMap<String,String>> players) {
+    public void makeFirstPar2(ArrayList<HashMap<String,String>> players,boolean googleSpread,boolean allclear) {
         if (players == null) return;
+
+        m_change_button.setText(googleSpread?R.string.action_google:R.string.action_reg_member);
+
         boolean clear = true;
-        if(m_players2!=null && m_MatchTable!=null && m_MatchTable.size()>0){
+        if(m_players2!=null && m_MatchTable!=null && m_MatchTable.size()>0 && !allclear){
 //            m_kumiawase.clear();
             dataList.remove(dataList.size()-1); //
             for(int i=m_MatchTable.size()-1;i>=0;i--){
@@ -395,7 +401,7 @@ public class MatchTableFragment extends Fragment {
                 HashMap<String, Object> match = new HashMap<>();
                 match.put(KEY_NAME, name);
                 match.put(KEY_PLAY_NUM, 0);
-                match.put(KEY_SELECTION, selection == "1" ? true : false);
+                match.put(KEY_SELECTION, selection==null || selection.equals("1"));
                 match.put(KEY_LEVEL, Integer.parseInt(level));
                 m_players2.add(match);
             }
@@ -489,7 +495,7 @@ public class MatchTableFragment extends Fragment {
      */
     Integer getMemberId(int last_num,List<Integer> k){
         for(;;) {
-            for (Integer i = 0; i < m_count; i++) {
+            for (Integer i = 0; i < m_number; i++) {
                 Map<String,Object> l = m_his.get(i.toString());
                 Integer ic = 0;
                 Object o = l.get("key_count");

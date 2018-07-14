@@ -5,5 +5,5 @@ import java.util.HashMap;
 
 
 public interface OnParingListChangeListener {
-    void onParingListChanged(ArrayList<HashMap<String,String>> data );
+    void onParingListChanged(ArrayList<HashMap<String,String>> data ,boolean googleSpread);
 }

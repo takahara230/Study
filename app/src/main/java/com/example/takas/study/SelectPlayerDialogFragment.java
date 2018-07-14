@@ -56,18 +56,11 @@ public class SelectPlayerDialogFragment extends DialogFragment {
         if (bundle != null) {
             m_players = (ArrayList<HashMap<String, String>>) bundle.getSerializable(KEY_PLAYERS);
             m_fromgoogle = bundle.getBoolean(KEY_FROMGOOGLE);
-        }else{
-            SharedPreferences pref = getContext().getSharedPreferences("pref", MODE_PRIVATE);
-            Gson gson = new Gson();
-            ArrayList<HashMap<String,String>> players = gson.fromJson(pref.getString(MainActivity.PREF_REG_PLAYERS, ""), new TypeToken<ArrayList<HashMap<String,String>>>() {
-            }.getType());
-            if (players != null)
-                m_players = players;
         }
 
         final Dialog dialog = new Dialog(getActivity(), android.R.style.Theme_Material_Light_Dialog);
         dialog.setContentView(R.layout.view_dialog);
-        dialog.setTitle(R.string.select_member);
+        dialog.setTitle(R.string.action_reg_member);
 
         // DialogFragment のレイアウトを縦横共に全域まで広げます
         dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -78,6 +71,7 @@ public class SelectPlayerDialogFragment extends DialogFragment {
         btn_ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // ok 処理
                 int selectcount = 0;
                 int count = listView.getCount();
                 for (int i = 0; i < count; i++) {
@@ -92,7 +86,7 @@ public class SelectPlayerDialogFragment extends DialogFragment {
 
                 if (selectcount < 4) {
                     new AlertDialog.Builder(getActivity())
-                            .setTitle(R.string.select_member)
+                            .setTitle(R.string.action_reg_member)
                             .setMessage(R.string.err_few_players)
                             .setPositiveButton("OK", null)
                             .show();
@@ -102,7 +96,7 @@ public class SelectPlayerDialogFragment extends DialogFragment {
                     if (a instanceof OnParingListChangeListener) {
                         OnParingListChangeListener listener =
                                 (OnParingListChangeListener) getActivity();
-                        listener.onParingListChanged(m_players);
+                        listener.onParingListChanged(m_players,m_fromgoogle);
                     }
                     dialog.dismiss();
                 }
@@ -189,6 +183,7 @@ public class SelectPlayerDialogFragment extends DialogFragment {
     protected ListView listView;
 
     protected List<String> dataList;
+    protected List<String> m_selections;
     protected ArrayAdapter<String> adapter;
 
     //String SAVE_KEY = "players";
@@ -200,11 +195,18 @@ public class SelectPlayerDialogFragment extends DialogFragment {
         if (m_players == null) {
             m_players = new ArrayList<>();
             dataList = new ArrayList<>();
+            m_selections = new ArrayList<>();
         } else {
-            dataList = new ArrayList<String>();
+            dataList = new ArrayList<>();
+            m_selections = new ArrayList<>();
             for (HashMap<String, String> data : m_players) {
                 String name = data.get(MainActivity.KEY_NAME);
                 dataList.add(name);
+                String selection =data.get(MainActivity.KEY_SELECTION);
+                if(selection==null){
+                    selection="1";
+                }
+                m_selections.add(selection);
             }
         }
         final FragmentActivity activity = getActivity();
@@ -216,7 +218,12 @@ public class SelectPlayerDialogFragment extends DialogFragment {
             listView.setAdapter(adapter);
             int count = listView.getCount();
             for (int i = 0; i < count; i++) {
-                listView.setItemChecked(i, true);
+                String selection = m_selections.get(i);
+                boolean select = true;
+                if(selection.equals("0")){
+                    select = false;
+                }
+                listView.setItemChecked(i, select);
             }
 
             // アイテムがクリックされたときに呼び出されるコールバックを登録
