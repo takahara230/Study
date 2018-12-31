@@ -24,6 +24,7 @@
     <string name="label_incomplete_game_clear">終了ゲームを残してクリア(メンバー変更)</string>
     <string name="error_need_spread_url">spreadsheetId と シート名を設定してください。</string>
     <string name="select_number">人数</string>
+    <string name="action_upload_google">結果をGoogle Spread に保存</string>
 
     <string-array name="list">
         <item>4人</item>

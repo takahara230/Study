@@ -26,7 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp">
-                <!--
+
                 <android.support.v7.widget.AppCompatSpinner
                     android:id="@+id/select_court_spinner"
                     android:entries="@array/list_court"
@@ -35,7 +35,6 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
                     />
--->
                 <Button
                     android:id="@+id/button_change"
                     style="@android:style/Widget.Material.Button.Borderless.Small"

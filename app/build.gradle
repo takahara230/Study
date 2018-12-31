@@ -9,7 +9,7 @@ android {
             storePassword 'takahara'
         }
         debug {
-            storeFile file("../keystore/debug.jks")
+          storeFile file("../keystore/debug.jks")
         }
     }
     compileSdkVersion 27
@@ -29,6 +29,10 @@ android {
         }
     }
     productFlavors {
+    }
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
     }
 }
 

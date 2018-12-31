@@ -36,6 +36,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,6 +53,14 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
     public static String PREF_GOOGLE_SELECTTION = "google_selection"; //
     public static String PREF_LOCAL_SELECTTION = "local_selection"; //
 
+    public static String PREF_MATCH_TABLE = "match_table";
+    public static String PREF_PLAYER_INFO = "player_info";
+
+    public static String PREF_MAKE_MODE = "make_mode";
+
+    public static String MODE_INDEX = "mode_index";
+    public static String MODE_USER_REG = "mode_user_reg";
+    public static String MODE_GOOGLE = "mode_google";
 
     public static String KEY_NAME = "name";
     public static String KEY_SELECTION = "selection";
@@ -108,6 +117,14 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         return true;
     }
 
+    public void setMode(String mode){
+        if(mode.equals(MainActivity.MODE_GOOGLE)){
+            m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD;
+        }else{
+            m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX;
+        }
+    }
+
     public void changeButton()
     {
         if(m_parSource== CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD){
@@ -139,6 +156,11 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
     }
 
 
+    /**
+     * メニュー選択
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -157,8 +179,10 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             }
         }*/else if(id == R.id.action_reg_member) {
             openRegNameDialog();
-        }else if(id == R.id.action_index){
+        }else if(id == R.id.action_index) {
             SelectNumber();
+        }else if(id == R.id.action_upload_google){
+            uploadGameResults();
         } else if (id == R.id.action_settings) {
 
         }
@@ -226,14 +250,34 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             pref.edit().putString(key, gson.toJson(data)).commit();
 
 
-            if(googleSpread)
+
+
+            if(googleSpread) {
                 m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_GOOGLE_SPREAD;
-            else
+                PrefSave(PREF_MAKE_MODE,MODE_GOOGLE);
+            } else {
                 m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_LOCAL_REG;
+                PrefSave(PREF_MAKE_MODE,MODE_USER_REG);
+            }
 
             // 選択されたメンバーから組み合わせ作成
             contentFragment.makeFirstPar2(data,googleSpread,m_allClear);
         }
+    }
+
+    public void PrefSave(String key,Object obj){
+        SharedPreferences pref = getPreferences(MODE_PRIVATE);
+        Gson gson = new Gson();
+        SharedPreferences.Editor e = pref.edit();
+        e.putString(key, gson.toJson(obj)).commit();
+        e.commit();
+    }
+
+    public Object PrefGet(String key, Type typeOfT)
+    {
+        SharedPreferences pref = getPreferences(MODE_PRIVATE);
+        Gson gson = new Gson();
+        return gson.fromJson(pref.getString(key, ""), typeOfT);
     }
 
     /**
@@ -338,6 +382,33 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         }
     }
 
+    public void uploadGameResults()
+    {
+        if (!isGooglePlayServicesAvailable()) {
+        } else if (mCredential.getSelectedAccountName() == null) {
+            chooseAccount2();
+        } else if (!isDeviceOnline()) {
+            //mOutputText.setText("No network connection available.");
+//            Log.d("","No network connection available.");
+            String text = "No network connection available.";
+            Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
+
+        } else {
+            uploadGameResultsBody();
+        }
+    }
+
+    void uploadGameResultsBody(){
+        FragmentManager fragmentManager;
+        fragmentManager = getSupportFragmentManager();
+        MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
+        if (contentFragment != null && contentFragment.isVisible()) {
+            ArrayList<String> data = contentFragment.getGameRes();
+            if(data==null || data.size()<=0) return;
+            new UploadResultsTask(mCredential).execute(data);
+        }
+    }
+
     /**
      * Attempts to set the account used with the API credentials. If an account
      * name was previously saved it will use that one; otherwise an account
@@ -357,6 +428,32 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             if (accountName != null) {
                 mCredential.setSelectedAccountName(accountName);
                 getResultsFromApi(true);
+            } else {
+                // Start a dialog from which the user can choose an account
+                startActivityForResult(
+                        mCredential.newChooseAccountIntent(),
+                        REQUEST_ACCOUNT_PICKER);
+            }
+        } else {
+            // Request the GET_ACCOUNTS permission via a user dialog
+            EasyPermissions.requestPermissions(
+                    this,
+                    "This app needs to access your Google account (via Contacts).",
+                    REQUEST_PERMISSION_GET_ACCOUNTS,
+                    Manifest.permission.GET_ACCOUNTS);
+        }
+    }
+
+    @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
+    private void chooseAccount2() {
+        if (EasyPermissions.hasPermissions(
+                this, Manifest.permission.GET_ACCOUNTS)) {
+            String accountName = getPreferences(Context.MODE_PRIVATE)
+                    .getString(PREF_ACCOUNT_NAME, null);
+            if (accountName != null) {
+                mCredential.setSelectedAccountName(accountName);
+                //getResultsFromApi(true);
+                uploadGameResultsBody();
             } else {
                 // Start a dialog from which the user can choose an account
                 startActivityForResult(
@@ -582,7 +679,7 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
             int start = 1;
             int len = 10;
             for (; ; ) {
-                String range = range0 + "A" + start + ":B" + (start + len);
+                String range = range0 + "A" + start + ":B" + (start + len-1);
                 ValueRange response = this.mService.spreadsheets().values()
                         .get(spreadsheetId, range)
                         .execute();
@@ -650,6 +747,113 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
                 String text = "Request cancelled.";
                 Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
             }
+        }
+
+    }
+
+
+    /**
+     * An asynchronous task that handles the Google Sheets API call.
+     * Placing the API calls in their own task ensures the UI stays responsive.
+     */
+    private class UploadResultsTask extends AsyncTask<ArrayList<String>, Void, Integer> {
+        private com.google.api.services.sheets.v4.Sheets mService = null;
+        private Exception mLastError = null;
+
+        UploadResultsTask(GoogleAccountCredential credential) {
+            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+            mService = new com.google.api.services.sheets.v4.Sheets.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Google Sheets API Android Quickstart")
+                    .build();
+        }
+
+        @Override
+        protected Integer doInBackground(ArrayList<String>... value) {
+            try {
+                putDataFromApi(value[0]);
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return 0;
+            }
+            return 0;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+            //mOutputText.setText("");
+            mProgress.show();
+        }
+
+        @Override
+        protected void onPostExecute(Integer res) {
+            mProgress.hide();
+        }
+
+        @Override
+        protected void onCancelled() {
+            mProgress.hide();
+            if (mLastError != null) {
+                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+                    showGooglePlayServicesAvailabilityErrorDialog(
+                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+                                    .getConnectionStatusCode());
+                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    startActivityForResult(
+                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                            MainActivity.REQUEST_AUTHORIZATION);
+                } else {
+//                    mOutputText.setText("The following error occurred:\n"                            + mLastError.getMessage());
+                    String text = "The following error occurred:\n" + mLastError.getMessage();
+                    Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                //mOutputText.setText("Request cancelled.");
+                String text = "Request cancelled.";
+                Toast.makeText(_activity, text, Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        /**
+         * データを書き込むメソッド
+         *
+         * @throws IOException
+         */
+        private void putDataFromApi(ArrayList<String> values) throws IOException {
+            ArrayList<List<Object>> data = new ArrayList<>();
+            for (String text:values
+                 ) {
+                List<Object> v = new ArrayList<>();
+                v.add(text);
+                data.add(v);
+            }
+            String spreadsheetId = getPreferences(Context.MODE_PRIVATE).getString(CmDef.PREF_SPREADSHEETID,null);
+            String range = "シート2!A1:A" + (values.size() + 1);
+            ValueRange valueRange = new ValueRange();
+            valueRange.setValues(data);
+            valueRange.setRange(range);
+            this.mService.spreadsheets().values()
+                    .update(spreadsheetId, range, valueRange)
+                    .setValueInputOption("USER_ENTERED")
+                    .execute();
+
+/*
+            String spreadsheetId = getPreferences(Context.MODE_PRIVATE).getString(CmDef.PREF_SPREADSHEETID,null);
+            String range = "シート1!A2:D2";
+            ValueRange valueRange = new ValueRange();
+            List row = new ArrayList<>();
+            List col = Arrays.asList("This", "is", "test", "test");
+            row.add(col);
+            valueRange.setValues(row);
+            valueRange.setRange(range);
+            this.mService.spreadsheets().values()
+                    .update(spreadsheetId, range, valueRange)
+                    .setValueInputOption("USER_ENTERED")
+                    .execute();
+            */
         }
     }
 }

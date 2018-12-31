@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -18,6 +19,10 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.gson.reflect.TypeToken;
+
+import org.w3c.dom.DOMError;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,10 +32,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import static android.content.Context.MODE_PRIVATE;
+
 /**
  *
  */
 public class MatchTableFragment extends Fragment {
+    public static  String PREF_COAT = "Coat";
 
     public  static  String TAG = MatchTableFragment.class.getSimpleName();
 
@@ -63,6 +71,7 @@ public class MatchTableFragment extends Fragment {
 
     boolean m_haveSpreadCash;
     Button m_change_button;
+    android.support.v7.widget.AppCompatSpinner m_cort_num_spinner;
 
     /**
      * view作成後に呼び出される。
@@ -71,6 +80,8 @@ public class MatchTableFragment extends Fragment {
      */
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState){
         super.onViewCreated(view,savedInstanceState);
+        //spinner = (Spinner) findViewById(R.id.spinner);
+        //spinner.setSelection(index);
 
         final MainActivity activity = (MainActivity)getActivity();
         ArrayList<HashMap<String,String>> data = activity.getSaveGoogleData();
@@ -87,13 +98,79 @@ public class MatchTableFragment extends Fragment {
             }
         });
 
+        m_cort_num_spinner = view.findViewById(R.id.select_court_spinner);
+        {
+            SharedPreferences pref = activity.getPreferences(MODE_PRIVATE);
+            m_coat = pref.getInt(PREF_COAT,1);
+        }
+        m_cort_num_spinner.setSelection(m_coat-1,false);
+        m_cort_num_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            // アイテムが選択された時の動作
+            public void onItemSelected(AdapterView parent,View view, int position,long id) {
+                m_coat=position+1;
+
+                SharedPreferences pref = activity.getPreferences(MODE_PRIVATE);
+                SharedPreferences.Editor e = pref.edit();
+                e.putInt(PREF_COAT,m_coat);
+                e.commit();
+
+                if(m_players2==null)
+                    makePar(true,m_number);
+                else {
+                    makePar2(true);
+                }
+
+            }
+
+            // 何も選択されなかった時の動作
+            public void onNothingSelected(AdapterView parent) {
+            }
+        });
+
+
         // コート数変更イベント処理登録
         SetEventChangeCoatNum(view);
         // リストアダプター設定
         setAdapters();
         // 起動直後
-        makePar(true,4);
+        //makePar(true,4);
 
+        try{
+
+
+        String mode = (String)activity.PrefGet(MainActivity.PREF_MAKE_MODE,new TypeToken<String>(){}.getType());
+        if(mode!=null){
+            if(mode.equals(MainActivity.MODE_GOOGLE)){
+                ArrayList<HashMap<String,Object>> players = (ArrayList<HashMap<String, Object>>)activity.PrefGet(MainActivity.PREF_PLAYER_INFO, new TypeToken<ArrayList<HashMap<String, Object>>>() {
+                }.getType());
+                m_players2 = new ArrayList<>();
+                for (HashMap<String,Object> map:players
+                     ) {
+                    HashMap<String,Object> n = new HashMap<>();
+                    String name = (String)map.get(KEY_NAME);
+                    n.put(KEY_NAME,name);
+                    Double v = (Double)map.get(KEY_PLAY_NUM);
+                    n.put(KEY_PLAY_NUM, v.intValue());
+                    Object s = map.get(KEY_SELECTION);
+                    n.put(KEY_SELECTION,s);
+
+                    v = (Double)map.get(KEY_LEVEL);
+                    n.put(KEY_LEVEL,v.intValue());
+
+                    m_players2.add(n);
+                }
+
+                m_change_button.setText(R.string.action_google);
+                m_MatchTable = (List<Map<String,Object>>)activity.PrefGet(MainActivity.PREF_MATCH_TABLE,new TypeToken<List<Map<String,Object>>>(){}.getType());
+                m_kumiawase = new HashMap<>();
+                updateList();
+
+                activity.setMode(mode);
+            }
+        }
+        }catch (Exception e){
+            makePar(true,4);
+        }
     }
 
 
@@ -137,7 +214,9 @@ public class MatchTableFragment extends Fragment {
      * listアダプターの初期設定
      */
     public void setAdapters(){
-        dataList = new ArrayList<>();
+        if(dataList==null) {
+            dataList = new ArrayList<>();
+        }
         FragmentActivity activity = getActivity();
         if(activity!=null) {
             adapter = new ArrayAdapter<>(
@@ -167,6 +246,16 @@ public class MatchTableFragment extends Fragment {
         }
     }
 
+    Integer getIntegerValue(Object o) {
+        if (o instanceof Double) {
+            Double d = (Double)o;
+            return d.intValue();
+        }else if(o instanceof  Integer){
+            return (Integer)o;
+        }
+        return 0;
+    }
+
     /**
      * アイテムタップ時の処理
      */
@@ -176,8 +265,8 @@ public class MatchTableFragment extends Fragment {
         Map<String,Object> match = m_MatchTable.get(position);
         String game_no = (String)match.get(GAME_NO);
         args.putString(GAME_NO,game_no);
-        Integer i0 = (Integer)match.get(PLAYER_0);
-        Integer i1 = (Integer)match.get(PLAYER_1);
+        Integer i0 = getIntegerValue (match.get(PLAYER_0));
+        Integer i1 = getIntegerValue (match.get(PLAYER_1));
         if(m_players2!=null) {
             HashMap<String,Object> p1 = m_players2.get(i0);
             HashMap<String,Object> p2 = m_players2.get(i1);
@@ -189,8 +278,8 @@ public class MatchTableFragment extends Fragment {
             String l = String.format(Locale.US,"%d-%d",i0+1,i1+1);
             args.putString(PAR_0,l);
         }
-        Integer i2 = (Integer)match.get(PLAYER_2);
-        Integer i3 = (Integer)match.get(PLAYER_3);
+        Integer i2 = getIntegerValue (match.get(PLAYER_2));
+        Integer i3 = getIntegerValue (match.get(PLAYER_3));
         if(m_players2!=null) {
             HashMap<String,Object> p1 = m_players2.get(i2);
             HashMap<String,Object> p2 = m_players2.get(i3);
@@ -289,48 +378,84 @@ public class MatchTableFragment extends Fragment {
     }
 //////////////////////////////////////////////////////////////////////////////////////////
     ArrayList<HashMap<String,Object>> m_players2;
+    ArrayList<Integer> m_targetlist;
     int m_playmin;
 
+    void sectionInit(){
+        Integer max = 0;
+        Integer min = -1;
+        m_targetlist = new ArrayList<>();
+        for (int index = 0; index < m_players2.size(); index++) {
+            HashMap<String, Object> player = m_players2.get(index); // メンバー情報
+            boolean selection = (boolean) player.get(KEY_SELECTION);
+            if (selection) {    // 選択されているメンバー
+                Integer count = (Integer) player.get(KEY_PLAY_NUM); // 回数
+                if(count>max){
+                    max = count;
+                }
+                if(min==-1 || count < min){
+                    min = count;
+                }
+                m_targetlist.add(index);
+            }
+        }
+        Integer lim = m_coat*4;
+        while(max!=min && m_targetlist.size()>lim){
+            int targetcount = max;
+            max=0;
+            ArrayList<Integer> candidate = new ArrayList<>(); // 候補
+            for (Integer c=0;c<m_targetlist.size();c++){
+                Integer index = m_targetlist.get(c);
+                HashMap<String, Object> player = m_players2.get(index); // メンバー情報
+                Integer count = (Integer) player.get(KEY_PLAY_NUM); // 回数
+                if(count==targetcount){
+                    candidate.add(index);
+                }else if(count>max){
+                    max = count;
+                }
+            }
+            if(candidate.size()==0){
+                // error
+                return;
+            } else if(lim <= m_targetlist.size()-candidate.size()){
+                // 全て外す
+                for (Integer c = candidate.size()-1;c>=0;c--) {
+                    Integer i = candidate.get(c);
+                    m_targetlist.remove(i);//この場合要素iが削除されるみたい、
+                }
+            }else{
+                int size = m_targetlist.size()-lim;
+                for(int i=size;i>0;i--){
+                    Random r = new Random();
+                    int c = r.nextInt(candidate.size());
+                    Integer index = candidate.get(c);
+                    candidate.remove(c);
+                    m_targetlist.remove(index); // この場合要素が削除されるみたい
+                }
+            }
+        }
+    }
 
     void findAndSet(List<Integer> match)
     {
-        Integer firstcount = -1;
-        ArrayList<Integer> candidate = new ArrayList<>();
-        for(int cx=0;cx<2;cx++) {
-            for (int index = 0; index < m_players2.size(); index++) {
-                if(candidate.indexOf(index)>=0) continue;
-                HashMap<String, Object> player = m_players2.get(index);
-                boolean selection = (boolean) player.get(KEY_SELECTION);
-                if (selection) {
-                    Integer count = (Integer) player.get(KEY_PLAY_NUM);
-                    if (count <= m_playmin) {
-                        candidate.add(index);
-                    }
-                }
-            }
-            if (candidate.size() >= 4) {
-                break;
-            }else if(firstcount==-1 && candidate.size()>=1){
-                firstcount = candidate.size();
-            }
-            m_playmin++;
-        }
+        if(m_targetlist.size()<4){
 
-        // まずは一人目を乱数から決定
-        if(firstcount==-1)
-            firstcount = candidate.size();
+            return;
+        }
+        int firstcount = m_targetlist.size();
         Random r = new Random();
         int i = r.nextInt(firstcount);
-        Integer index = candidate.get(i);
-        candidate.remove(i);
+        Integer index = m_targetlist.get(i);
+        m_targetlist.remove(i);
 
         match.add(index);
         HashMap<String,Object> player = m_players2.get(index);
         Integer level = (Integer)player.get(KEY_LEVEL);
-        candidate = SortData(candidate,level);
-        for(int ix=0;ix<3;ix++){
-            Integer index2 = candidate.get(ix);
+        m_targetlist = SortData(m_targetlist,level);
+        for(int ix=2;ix>=0;ix--){
+            Integer index2 = m_targetlist.get(ix);
             match.add(index2);
+            m_targetlist.remove(ix);
         }
         for(int ix=0;ix<4;ix++){
             Integer index2 = match.get(ix);
@@ -342,6 +467,7 @@ public class MatchTableFragment extends Fragment {
         kumiawase2(match);
     }
 
+    /// レベルの近い順に並べる？
     private ArrayList<Integer> SortData(ArrayList<Integer> mydata,final Integer level){
         Collections.sort(mydata/*並べ替えするオブジェクト*/, new Comparator<Integer>() {
             public int compare(Integer o1, Integer o2) {
@@ -379,6 +505,8 @@ public class MatchTableFragment extends Fragment {
         if(m_players2!=null && m_MatchTable!=null && m_MatchTable.size()>0 && !allclear){
 //            m_kumiawase.clear();
             dataList.remove(dataList.size()-1); //
+            //dataList.clear(); todo　多分こっちで大丈夫
+
             for(int i=m_MatchTable.size()-1;i>=0;i--){
                 Map<String,Object> match = m_MatchTable.get(i);
                 Integer fin = (Integer)match.get(KEY_MATCH_FIN);
@@ -448,35 +576,45 @@ public class MatchTableFragment extends Fragment {
         int i=m_MatchTable.size()/m_coat;
         int max = i+4; // i+4;
         for(;i<max;i++){
+            sectionInit();
             for( int c = 0 ; c < m_coat ; c++ ) {
                 ArrayList<Integer> k = new ArrayList<>();
                 findAndSet(k);
-                String l;
+                if(k.size()==0){
+                    String l="空き";
+                    String game_no;
+                    if (m_coat > 1)
+                        game_no = String.format("[%d-%d]", i + 1, c + 1);
+                    else
+                        game_no = String.format("[%d]", i + 1);
+                    l = String.format("%s %s", game_no, l);
+                    dataList.add(l);
+                    Map<String, Object> match = new HashMap<>();
+                    m_MatchTable.add(match);
+                }else {
+                    String l;
 
-                HashMap<String,Object> p0 = m_players2.get(k.get(0));
-                HashMap<String,Object> p1 = m_players2.get(k.get(1));
-                HashMap<String,Object> p2 = m_players2.get(k.get(2));
-                HashMap<String,Object> p3 = m_players2.get(k.get(3));
-                String n0 = (String)p0.get(KEY_NAME);
-                String n1 = (String)p1.get(KEY_NAME);
-                String n2 = (String)p2.get(KEY_NAME);
-                String n3 = (String)p3.get(KEY_NAME);
-                l = String.format("%s-%s vs %s-%s",n0,n1,n2,n3);
+                    String n0 = getLabel(k.get(0));
+                    String n1 = getLabel(k.get(1));
+                    String n2 = getLabel(k.get(2));
+                    String n3 = getLabel(k.get(3));
+                    l = String.format("%s-%s vs %s-%s", n0, n1, n2, n3);
 
-                String game_no;
-                if(m_coat>1)
-                    game_no=String.format("[%d-%d]", i + 1, c + 1);
-                else
-                    game_no=String.format("[%d]", i + 1);
-                l=String.format("%s %s",game_no,l);
-                dataList.add(l);
-                Map<String,Object> match = new HashMap<>();
-                match.put(GAME_NO,game_no);
-                match.put(PLAYER_0,k.get(0));
-                match.put(PLAYER_1,k.get(1));
-                match.put(PLAYER_2,k.get(2));
-                match.put(PLAYER_3,k.get(3));
-                m_MatchTable.add(match);
+                    String game_no;
+                    if (m_coat > 1)
+                        game_no = String.format("[%d-%d]", i + 1, c + 1);
+                    else
+                        game_no = String.format("[%d]", i + 1);
+                    l = String.format("%s %s", game_no, l);
+                    dataList.add(l);
+                    Map<String, Object> match = new HashMap<>();
+                    match.put(GAME_NO, game_no);
+                    match.put(PLAYER_0, k.get(0));
+                    match.put(PLAYER_1, k.get(1));
+                    match.put(PLAYER_2, k.get(2));
+                    match.put(PLAYER_3, k.get(3));
+                    m_MatchTable.add(match);
+                }
             }
         }
 
@@ -484,7 +622,89 @@ public class MatchTableFragment extends Fragment {
 
         // ListView の更新
         adapter.notifyDataSetChanged();
+
+        //
+        //m_kumiawase = new HashMap<>();
+        //m_MatchTable = new ArrayList<>();
+        MainActivity activity = (MainActivity) getActivity();
+        activity.PrefSave(MainActivity.PREF_MATCH_TABLE,m_MatchTable);
+        activity.PrefSave(MainActivity.PREF_PLAYER_INFO,m_players2);
+
     }
+
+    void updateList()
+    {
+        int max = m_MatchTable.size();
+        int index=0;
+        int i=0;
+        for(;index<max;i++){
+            for( int c = 0 ; c < m_coat ; c++ ) {
+                Map<String,Object> match = m_MatchTable.get(index);
+                if(match.size()==0){
+                    String l="空き";
+                    String game_no;
+                    if (m_coat > 1)
+                        game_no = String.format("[%d-%d]", i + 1, c + 1);
+                    else
+                        game_no = String.format("[%d]", i + 1);
+                    l = String.format("%s %s", game_no, l);
+                    dataList.add(l);
+                }else{
+                    Integer i0 = ParseMatchIndex(match.get(PLAYER_0));
+                    Integer i1 = ParseMatchIndex(match.get(PLAYER_1));
+                    Integer i2 = ParseMatchIndex(match.get(PLAYER_2));
+                    Integer i3 = ParseMatchIndex(match.get(PLAYER_3));
+
+                    String l;
+
+                    String n0 = getLabel(i0);
+                    String n1 = getLabel(i1);
+                    String n2 = getLabel(i2);
+                    String n3 = getLabel(i3);
+                    l = String.format("%s-%s vs %s-%s", n0, n1, n2, n3);
+
+                    String game_no;
+                    if (m_coat > 1)
+                        game_no = String.format("[%d-%d]", i + 1, c + 1);
+                    else
+                        game_no = String.format("[%d]", i + 1);
+                    l = String.format("%s %s", game_no, l);
+                    dataList.add(l);
+                }
+                index++;
+                if(index>=max)
+                    break;
+            }
+        }
+        String clipdata="";
+        for (String t:
+             dataList) {
+            clipdata=clipdata+t;
+            clipdata=clipdata+System.getProperty("line.separator");
+        }
+        CmUtils.copyToClipboard(getActivity(),"",clipdata);
+        dataList.add("< 組み合わせ追加... >");
+
+        // ListView の更新
+        adapter.notifyDataSetChanged();
+    }
+
+    Integer ParseMatchIndex(Object o){
+        Double d = (Double)o;
+        return d.intValue();
+    }
+
+    /**
+    *
+    */
+    String getLabel(Integer index)
+    {
+        HashMap<String, Object> p0 = m_players2.get(index);
+        String n0 = (String) p0.get(KEY_NAME);
+        Integer c0 = (Integer) p0.get(KEY_PLAY_NUM);
+        return String.format("%s%d",n0,c0);
+    }
+
 
 
     /**
@@ -691,8 +911,8 @@ public class MatchTableFragment extends Fragment {
     {
         Map<String,Object> match = m_MatchTable.get(position);
         String game_no = (String)match.get(GAME_NO);
-        Integer i0 = (Integer)match.get(PLAYER_0);
-        Integer i1 = (Integer)match.get(PLAYER_1);
+        Integer i0 = getIntegerValue (match.get(PLAYER_0));
+        Integer i1 = getIntegerValue (match.get(PLAYER_1));
         String l0;
         if(m_players2!=null) {
             HashMap<String,Object> p1 = m_players2.get(i0);
@@ -703,8 +923,8 @@ public class MatchTableFragment extends Fragment {
         }else{
             l0 = String.format(Locale.US,"%d-%d",i0+1,i1+1);
         }
-        Integer i2 = (Integer)match.get(PLAYER_2);
-        Integer i3 = (Integer)match.get(PLAYER_3);
+        Integer i2 = getIntegerValue (match.get(PLAYER_2));
+        Integer i3 = getIntegerValue (match.get(PLAYER_3));
         String l1;
         if(m_players2!=null) {
             HashMap<String,Object> p1 = m_players2.get(i2);
@@ -717,6 +937,23 @@ public class MatchTableFragment extends Fragment {
         }
         String l = String.format("%s %s vs %s",game_no,l0,l1);
         return l;
+    }
+
+
+    public ArrayList<String>  getGameRes()
+    {
+        ArrayList<String> data = new ArrayList<>();
+        for(int i=m_MatchTable.size()-1;i>=0;i--){
+            Map<String,Object> match = m_MatchTable.get(i);
+            Integer fin = (Integer)match.get(KEY_MATCH_FIN);
+            if(fin!=null){
+                String text = makeParLabel(i);
+                data.add(text);
+
+            }
+        }
+
+        return data;
     }
 
 

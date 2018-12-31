@@ -1,6 +1,8 @@
 package com.example.takas.study;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -30,5 +32,15 @@ public class CmUtils {
 
     public static void UserPrefJsonPut(Activity activity,String key,Object d){
 
+    }
+
+    public static void copyToClipboard(Context context, String label, String text) {
+        // copy to clipboard
+        ClipboardManager clipboardManager =
+                (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (null == clipboardManager) {
+            return;
+        }
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text));
     }
 }

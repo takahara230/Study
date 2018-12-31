@@ -19,6 +19,12 @@
         android:title="@string/action_index"
         app:showAsAction="never"/>
     <item
+        android:id="@+id/action_upload_google"
+        android:orderInCategory="100"
+        android:title="@string/action_upload_google"
+        app:showAsAction="never"
+        />
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="101"
         android:title="@string/action_settings"
