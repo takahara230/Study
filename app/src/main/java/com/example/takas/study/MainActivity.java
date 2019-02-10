@@ -151,7 +151,9 @@ public class MainActivity extends AppCompatActivity implements OnParingListChang
         MatchTableFragment contentFragment = (MatchTableFragment) fragmentManager.findFragmentByTag(MatchTableFragment.TAG);
         if (!(contentFragment == null
                 || !contentFragment.isVisible())) {
-            contentFragment.makePar(true,m_number);
+            m_parSource = CmDef.PAIR_SOURCE.PAIR_SOURCE_INDEX;
+            PrefSave(PREF_MAKE_MODE,MODE_INDEX);
+            contentFragment.makeParIndex(true,m_number);
         }
     }
 
